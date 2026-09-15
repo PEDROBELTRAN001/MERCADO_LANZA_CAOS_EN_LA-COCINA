@@ -1,49 +1,75 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class StairTrigger : Interactable
+public class StairTrigger : MonoBehaviour
 {
-    [Header("Stair Settings")]
+    [Header("Teleport")]
     public Vector3 teleportDestination;
     public string stairName = "Escalera";
 
+    private bool playerInRange = false;
     private GameObject promptObj;
 
     private void Start()
     {
-        // Crear prompt visual
+        // Prompt flotante
         promptObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
         promptObj.name = "Prompt_" + stairName;
         promptObj.transform.SetParent(transform);
-        promptObj.transform.localPosition = new Vector3(0, 2.5f, 0);
+        promptObj.transform.localPosition = new Vector3(0, 1.5f, 0);
         promptObj.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
 
         Renderer rend = promptObj.GetComponent<Renderer>();
-        rend.material = new Material(Shader.Find("Standard"));
-        rend.material.color = Color.yellow;
-        rend.material.SetColor("_EmissionColor", Color.yellow * 0.5f);
-        rend.material.EnableKeyword("_EMISSION");
+        Material mat = new Material(Shader.Find("Standard"));
+        mat.color = Color.yellow;
+        mat.EnableKeyword("_EMISSION");
+        mat.SetColor("_EmissionColor", Color.yellow * 0.4f);
+        rend.sharedMaterial = mat;
 
-        // Quitar collider del prompt
-        Collider col = promptObj.GetComponent<Collider>();
-        if (col != null) DestroyImmediate(col);
+        Collider c = promptObj.GetComponent<Collider>();
+        if (c != null) DestroyImmediate(c);
 
         promptObj.SetActive(false);
     }
 
-    public override void Interact(PlayerController player)
+    private void OnTriggerEnter(Collider other)
     {
-        base.Interact(player);
-        player.Teleport(teleportDestination);
-        Debug.Log("Teletransportado a: " + teleportDestination);
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = true;
+            if (promptObj != null) promptObj.SetActive(true);
+        }
     }
 
-    public override void ShowPrompt()
+    private void OnTriggerExit(Collider other)
     {
-        if (promptObj != null) promptObj.SetActive(true);
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+            if (promptObj != null) promptObj.SetActive(false);
+        }
     }
 
-    public override void HidePrompt()
+    private void Update()
     {
-        if (promptObj != null) promptObj.SetActive(false);
+        if (!playerInRange) return;
+
+        bool pressed = false;
+        if (Keyboard.current != null)
+            pressed = Keyboard.current.eKey.wasPressedThisFrame;
+
+        if (pressed)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                PlayerController pc = player.GetComponent<PlayerController>();
+                if (pc != null)
+                {
+                    pc.Teleport(teleportDestination);
+                    Debug.Log(stairName + " -> Teletransportado!");
+                }
+            }
+        }
     }
 }

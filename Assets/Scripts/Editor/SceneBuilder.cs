@@ -12,21 +12,25 @@ public class SceneBuilder : EditorWindow
             return;
 
         // Limpiar escena anterior
-        foreach (GameObject obj in FindObjectsByType<GameObject>())
+        GameObject[] allObjects = FindObjectsByType<GameObject>();
+        System.Collections.Generic.List<GameObject> toDestroy = new System.Collections.Generic.List<GameObject>();
+        string[] prefixes = { "Wall_", "Floor_", "Counter_", "Stove", "Oven", "Prep", "Washing", "Plate", "Trash", "Stair", "Step_", "Mesa", "Serving", "Player", "GameManager", "OrderSystem", "SimpleInput", "Tomate", "Lechuga", "Pan", "Railing", "Prompt_" };
+
+        foreach (GameObject obj in allObjects)
         {
-            if (obj.name.StartsWith("Wall_") || obj.name.StartsWith("Floor_") ||
-                obj.name.StartsWith("Counter_") || obj.name.StartsWith("Stove") ||
-                obj.name.StartsWith("Oven") || obj.name.StartsWith("Prep") ||
-                obj.name.StartsWith("Washing") || obj.name.StartsWith("Plate") ||
-                obj.name.StartsWith("Trash") || obj.name.StartsWith("Stair") ||
-                obj.name.StartsWith("Step_") || obj.name.StartsWith("Mesa") ||
-                obj.name.StartsWith("Serving") || obj.name.StartsWith("Player") ||
-                obj.name.StartsWith("GameManager") || obj.name.StartsWith("OrderSystem") ||
-                obj.name.StartsWith("Tomate") || obj.name.StartsWith("Lechuga") ||
-                obj.name.StartsWith("Pan") || obj.name.Contains("Material"))
+            if (obj == null) continue;
+            foreach (string prefix in prefixes)
             {
-                DestroyImmediate(obj);
+                if (obj.name.StartsWith(prefix))
+                {
+                    toDestroy.Add(obj);
+                    break;
+                }
             }
+        }
+        foreach (GameObject obj in toDestroy)
+        {
+            if (obj != null) DestroyImmediate(obj);
         }
 
         BuildKitchenFloor();
@@ -41,6 +45,7 @@ public class SceneBuilder : EditorWindow
         SetupCamera();
         SetupGameManager();
         BuildIngredients();
+        BuildRecipes();
 
         EditorUtility.DisplayDialog("Listo",
             "Escena construida!\n\n" +
@@ -53,14 +58,21 @@ public class SceneBuilder : EditorWindow
 
     static Material CreateMaterial(string name, Color color)
     {
-        Shader shader = Shader.Find("Standard");
+        string path = "Assets/Materials/" + name + ".mat";
+        Material existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (existing != null) return existing;
+
+        // Buscar shaders disponibles
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = Shader.Find("Unlit/Color");
+        if (shader == null) shader = Shader.Find("Standard");
+
         Material mat = new Material(shader);
         mat.name = name;
         mat.color = color;
-        string path = "Assets/Materials/" + name + ".mat";
-        if (AssetDatabase.LoadAssetAtPath<Material>(path) == null)
-            AssetDatabase.CreateAsset(mat, path);
-        return AssetDatabase.LoadAssetAtPath<Material>(path);
+        AssetDatabase.CreateAsset(mat, path);
+        return mat;
     }
 
     static GameObject CreatePrimitive(PrimitiveType type, string name, Vector3 position, Vector3 scale, Material mat)
@@ -146,18 +158,28 @@ public class SceneBuilder : EditorWindow
     {
         Material stairMat = CreateMaterial("StairMaterial", new Color(0.55f, 0.47f, 0.39f));
 
-        // Conecta planta baja (x=-3) con planta alta (x=+3)
-        for (int i = 0; i < 8; i++)
-        {
-            float x = -3f + (i * 0.8f);
-            float y = 0.1f + (i * 0.35f);
-            CreatePrimitive(PrimitiveType.Cube, "Step_" + i, new Vector3(x, y, 0), new Vector3(0.7f, 0.2f, 2f), stairMat);
-        }
+        // Zona subir - dentro de cocina, pegada a pared este
+        GameObject zoneUp = CreatePrimitive(PrimitiveType.Cube, "Stairs_Up", new Vector3(-4f, 1f, 0), new Vector3(2f, 2.5f, 3f), stairMat);
+        zoneUp.GetComponent<Renderer>().enabled = false;
+        var triggerUp = zoneUp.AddComponent<StairTrigger>();
+        triggerUp.teleportDestination = new Vector3(5f, 3.5f, 0f);
+        triggerUp.stairName = "Subir al Patio";
+        Collider colUp = zoneUp.GetComponent<Collider>();
+        if (colUp != null) colUp.isTrigger = true;
 
-        // Barandal
+        // Zona bajar - dentro de patio, pegada a pared oeste
+        GameObject zoneDown = CreatePrimitive(PrimitiveType.Cube, "Stairs_Down", new Vector3(5f, 3.5f, 0), new Vector3(2f, 2.5f, 3f), stairMat);
+        zoneDown.GetComponent<Renderer>().enabled = false;
+        var triggerDown = zoneDown.AddComponent<StairTrigger>();
+        triggerDown.teleportDestination = new Vector3(-4f, 1f, 0f);
+        triggerDown.stairName = "Bajar a Cocina";
+        Collider colDown = zoneDown.GetComponent<Collider>();
+        if (colDown != null) colDown.isTrigger = true;
+
+        // Barandales visuales
         Material railMat = CreateMaterial("RailMaterial", new Color(0.45f, 0.37f, 0.29f));
-        CreatePrimitive(PrimitiveType.Cube, "Railing_Front", new Vector3(-0.5f, 1.5f, -1.1f), new Vector3(7f, 0.15f, 0.15f), railMat);
-        CreatePrimitive(PrimitiveType.Cube, "Railing_Back", new Vector3(-0.5f, 1.5f, 1.1f), new Vector3(7f, 0.15f, 0.15f), railMat);
+        CreatePrimitive(PrimitiveType.Cube, "Railing_Front", new Vector3(0.5f, 2.2f, -1.1f), new Vector3(8f, 0.15f, 0.15f), railMat);
+        CreatePrimitive(PrimitiveType.Cube, "Railing_Back", new Vector3(0.5f, 2.2f, 1.1f), new Vector3(8f, 0.15f, 0.15f), railMat);
     }
 
     // ==================== PLANTA ALTA - PATIO DE COMIDAS ====================
@@ -279,6 +301,9 @@ public class SceneBuilder : EditorWindow
         GameObject os = new GameObject("OrderSystem");
         os.transform.position = Vector3.zero;
         os.AddComponent<OrderSystem>();
+
+        GameObject input = new GameObject("SimpleInput");
+        input.AddComponent<SimpleInput>();
     }
 
     // ==================== INGREDIENTES ====================
@@ -308,5 +333,46 @@ public class SceneBuilder : EditorWindow
         pan.GetComponent<IngredientPickup>().ingredientType = IngredientPickup.IngredientType.Bread;
         pan.AddComponent<Ingredient>().ingredientName = "Pan";
         pan.GetComponent<Ingredient>().ingredientType = Ingredient.IngredientType.Bread;
+    }
+
+    // ==================== RECETAS ====================
+    static void BuildRecipes()
+    {
+        string folder = "Assets/Resources/Recipes";
+        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+            AssetDatabase.CreateFolder("Assets", "Resources");
+        if (!AssetDatabase.IsValidFolder(folder))
+            AssetDatabase.CreateFolder("Assets/Resources", "Recipes");
+
+        CreateRecipe(folder, "Hamburguesa", new Ingredient.IngredientType[] {
+            Ingredient.IngredientType.Bread, Ingredient.IngredientType.Meat, Ingredient.IngredientType.Cheese
+        }, true, true, 25);
+
+        CreateRecipe(folder, "Ensalada", new Ingredient.IngredientType[] {
+            Ingredient.IngredientType.Lettuce, Ingredient.IngredientType.Tomato
+        }, true, false, 20);
+
+        CreateRecipe(folder, "Sandwich", new Ingredient.IngredientType[] {
+            Ingredient.IngredientType.Bread, Ingredient.IngredientType.Lettuce, Ingredient.IngredientType.Tomato
+        }, true, false, 15);
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("Recetas creadas en " + folder);
+    }
+
+    static void CreateRecipe(string folder, string name, Ingredient.IngredientType[] ingredients, bool chop, bool cook, int points)
+    {
+        string path = folder + "/" + name + ".asset";
+        RecipeData existing = AssetDatabase.LoadAssetAtPath<RecipeData>(path);
+        if (existing != null) return;
+
+        RecipeData recipe = ScriptableObject.CreateInstance<RecipeData>();
+        recipe.recipeName = name;
+        recipe.requiredIngredients = ingredients;
+        recipe.requiresChopping = chop;
+        recipe.requiresCooking = cook;
+        recipe.basePoints = points;
+        AssetDatabase.CreateAsset(recipe, path);
     }
 }

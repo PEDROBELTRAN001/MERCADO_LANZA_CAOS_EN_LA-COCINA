@@ -10,7 +10,6 @@ public class PlayerController : MonoBehaviour
     public float interactionRange = 1.5f;
     public LayerMask interactableLayer;
 
-    private Vector2 moveInput;
     private Vector3 moveDirection;
     private Rigidbody rb;
     private Interactable currentInteractable;
@@ -24,28 +23,30 @@ public class PlayerController : MonoBehaviour
             rb.freezeRotation = true;
             rb.useGravity = true;
         }
+
+        if (SimpleInput.Instance == null)
+        {
+            GameObject inputObj = new GameObject("SimpleInput");
+            inputObj.AddComponent<SimpleInput>();
+        }
     }
 
     private void Update()
     {
-        HandleInput();
-        HandleInteraction();
+        HandleMovement();
+        DetectInteractable();
+
+        if (SimpleInput.Instance != null && SimpleInput.Instance.InteractPressed)
+        {
+            TryInteract();
+        }
     }
 
-    private void FixedUpdate()
+    private void HandleMovement()
     {
-        Move();
-    }
+        Vector2 input = SimpleInput.Instance != null ? SimpleInput.Instance.MoveInput : Vector2.zero;
 
-    private void HandleInput()
-    {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-
-        moveInput = new Vector2(horizontal, vertical);
-        moveInput.Normalize();
-
-        if (moveInput.magnitude > 0.1f)
+        if (input.magnitude > 0.1f)
         {
             Vector3 forward = Camera.main.transform.forward;
             Vector3 right = Camera.main.transform.right;
@@ -54,32 +55,23 @@ public class PlayerController : MonoBehaviour
             forward.Normalize();
             right.Normalize();
 
-            moveDirection = (forward * moveInput.y + right * moveInput.x).normalized;
+            moveDirection = (forward * input.y + right * input.x).normalized;
 
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 targetRotation,
-                rotationSpeed * Time.fixedDeltaTime
+                rotationSpeed * Time.deltaTime
             );
         }
-    }
+        else
+        {
+            moveDirection = Vector3.zero;
+        }
 
-    private void Move()
-    {
         Vector3 velocity = moveDirection * moveSpeed;
         velocity.y = rb.linearVelocity.y;
         rb.linearVelocity = velocity;
-    }
-
-    private void HandleInteraction()
-    {
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            TryInteract();
-        }
-
-        DetectInteractable();
     }
 
     private void DetectInteractable()
@@ -97,16 +89,12 @@ public class PlayerController : MonoBehaviour
         if (newInteractable != currentInteractable)
         {
             if (currentInteractable != null)
-            {
                 currentInteractable.HidePrompt();
-            }
 
             currentInteractable = newInteractable;
 
             if (currentInteractable != null)
-            {
                 currentInteractable.ShowPrompt();
-            }
         }
     }
 
