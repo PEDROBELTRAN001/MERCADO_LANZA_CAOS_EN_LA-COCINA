@@ -10,7 +10,7 @@ public class PlayerController : MonoBehaviour
     public float interactionRange = 1.5f;
     public LayerMask interactableLayer;
 
-    private Vector3 moveDirection;
+    private Vector2 moveInput;
     private Rigidbody rb;
     private Interactable currentInteractable;
 
@@ -33,7 +33,9 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        HandleMovement();
+        // 1. Solo leemos el input en Update para mayor precisión
+        moveInput = SimpleInput.Instance != null ? SimpleInput.Instance.MoveInput : Vector2.zero;
+
         DetectInteractable();
 
         if (SimpleInput.Instance != null && SimpleInput.Instance.InteractPressed)
@@ -42,36 +44,43 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void FixedUpdate()
+    {
+        // 2. Todo el movimiento y físicas se procesan estrictamente en FixedUpdate
+        HandleMovement();
+    }
+
     private void HandleMovement()
     {
-        Vector2 input = SimpleInput.Instance != null ? SimpleInput.Instance.MoveInput : Vector2.zero;
-
-        if (input.magnitude > 0.1f)
+        if (moveInput.magnitude > 0.1f)
         {
-            Vector3 forward = Camera.main.transform.forward;
-            Vector3 right = Camera.main.transform.right;
-            forward.y = 0f;
-            right.y = 0f;
-            forward.Normalize();
-            right.Normalize();
+            Vector3 cameraForward = Camera.main.transform.forward;
+            Vector3 cameraRight = Camera.main.transform.right;
+            cameraForward.y = 0f;
+            cameraRight.y = 0f;
+            cameraForward.Normalize();
+            cameraRight.Normalize();
 
-            moveDirection = (forward * input.y + right * input.x).normalized;
+            Vector3 moveDirection = (cameraForward * moveInput.y + cameraRight * moveInput.x).normalized;
 
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed * Time.deltaTime
-            );
+            if (moveDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+                rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+            }
+
+            // Usar MovePosition en lugar de alterar la velocidad directamente previene que atraviese paredes
+            Vector3 targetPosition = rb.position + moveDirection * (moveInput.magnitude * moveSpeed * Time.fixedDeltaTime);
+            rb.MovePosition(targetPosition);
         }
         else
         {
-            moveDirection = Vector3.zero;
+            // Mantener solo la velocidad vertical (gravedad) cuando no hay input
+            Vector3 velocity = rb.linearVelocity;
+            velocity.x = 0f;
+            velocity.z = 0f;
+            rb.linearVelocity = velocity;
         }
-
-        Vector3 velocity = moveDirection * moveSpeed;
-        velocity.y = rb.linearVelocity.y;
-        rb.linearVelocity = velocity;
     }
 
     private void DetectInteractable()
