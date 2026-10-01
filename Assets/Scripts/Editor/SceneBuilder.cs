@@ -11,8 +11,14 @@ public class SceneBuilder : EditorWindow
             "Si", "Cancelar"))
             return;
 
+        BuildContents();
+        EditorUtility.DisplayDialog("Listo", "Mercado y cocina de Doña Rosa construidos. Guarda la escena para conservarlos.", "OK");
+    }
+
+    public static void BuildContents()
+    {
         // Limpiar escena anterior
-        GameObject[] allObjects = FindObjectsByType<GameObject>();
+        GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
         System.Collections.Generic.List<GameObject> toDestroy = new System.Collections.Generic.List<GameObject>();
         string[] prefixes = { "Wall_", "Floor_", "Counter_", "Stove", "Oven", "Prep", "Washing", "Plate", "Trash", "Stair", "Step_", "Mesa", "Serving", "Player", "GameManager", "OrderSystem", "SimpleInput", "Tomate", "Lechuga", "Pan", "Railing", "Prompt_" };
 
@@ -47,13 +53,7 @@ public class SceneBuilder : EditorWindow
         BuildIngredients();
         BuildRecipes();
 
-        EditorUtility.DisplayDialog("Listo",
-            "Escena construida!\n\n" +
-            "Planta BAJA: Cocina (izquierda)\n" +
-            "Planta ALTA: Patio de comidas (derecha)\n\n" +
-            "Pulsa Play para probar.\n" +
-            "WASD: Mover | E: Interactuar",
-            "OK");
+        DonaRosaBuilder.Integrate();
     }
 
     static Material CreateMaterial(string name, Color color)
@@ -264,7 +264,7 @@ public class SceneBuilder : EditorWindow
         col.height = 2.5f;
         col.center = new Vector3(0, 0.5f, 0);
 
-        player.AddComponent<PlayerController>();
+        player.AddComponent<PlayerController>().interactableLayer = Physics.DefaultRaycastLayers;
 
         // Tag
         player.tag = "Player";
@@ -281,7 +281,8 @@ public class SceneBuilder : EditorWindow
         mainCam.backgroundColor = new Color(0.12f, 0.12f, 0.18f);
         mainCam.clearFlags = CameraClearFlags.SolidColor;
 
-        CameraFollow follow = mainCam.gameObject.AddComponent<CameraFollow>();
+        CameraFollow follow = mainCam.GetComponent<CameraFollow>();
+        if (follow == null) follow = mainCam.gameObject.AddComponent<CameraFollow>();
         GameObject player = GameObject.Find("Player");
         if (player != null) follow.target = player.transform;
         follow.offset = new Vector3(0, 14, -12);
