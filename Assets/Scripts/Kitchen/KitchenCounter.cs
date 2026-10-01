@@ -26,10 +26,13 @@ public class KitchenCounter : Interactable
     {
         if (storedItem != null)
         {
-            storedItem.transform.SetParent(player.transform);
-            storedItem.transform.localPosition = Vector3.up * 1.5f;
+            Transform hand = player.transform.Find("Hand");
+            if (hand == null || hand.childCount > 0) return;
+            storedItem.transform.SetParent(hand, false);
+            storedItem.transform.localPosition = Vector3.zero;
             isOccupied = false;
             Debug.Log("Recogido: " + storedItem.name);
+            storedItem = null;
         }
     }
 
