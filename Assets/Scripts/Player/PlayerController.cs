@@ -4,7 +4,7 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 5f;
-    public float rotationSpeed = 720f;
+    // Eliminamos la variable rotationSpeed para forzar la rotación ágil por código
 
     [Header("Interaction")]
     public float interactionRange = 1.5f;
@@ -33,7 +33,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        HandleMovement();
+        CalculateMoveDirection();
         DetectInteractable();
 
         if (SimpleInput.Instance != null && SimpleInput.Instance.InteractPressed)
@@ -42,7 +42,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleMovement()
+    private void FixedUpdate()
+    {
+        ApplyMovementAndRotation();
+    }
+
+    private void CalculateMoveDirection()
     {
         Vector2 input = SimpleInput.Instance != null ? SimpleInput.Instance.MoveInput : Vector2.zero;
 
@@ -56,21 +61,26 @@ public class PlayerController : MonoBehaviour
             right.Normalize();
 
             moveDirection = (forward * input.y + right * input.x).normalized;
-
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed * Time.deltaTime
-            );
         }
         else
         {
             moveDirection = Vector3.zero;
         }
+    }
 
+    private void ApplyMovementAndRotation()
+    {
+        // 1. Aplicar rotación ultra rápida
+        if (moveDirection != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            // Slerp con factor 30f fuerza un giro veloz y exacto sin derrapar
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, 30f * Time.fixedDeltaTime));
+        }
+
+        // 2. Aplicar velocidad física recta
         Vector3 velocity = moveDirection * moveSpeed;
-        velocity.y = rb.linearVelocity.y;
+        velocity.y = rb.linearVelocity.y; // Mantener la gravedad
         rb.linearVelocity = velocity;
     }
 

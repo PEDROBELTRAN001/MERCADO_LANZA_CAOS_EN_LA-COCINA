@@ -14,6 +14,23 @@ public class CameraFollow : MonoBehaviour
     public Vector2 minXZ = new Vector2(-16, -8);
     public Vector2 maxXZ = new Vector2(16, 8);
 
+    private void Start()
+    {
+        // Si no se asignó un objetivo manualmente, buscar al jugador de forma automática
+        if (target == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                target = player.transform;
+            }
+            else
+            {
+                Debug.LogWarning("CameraFollow: No se encontró un objeto con el Tag 'Player'.");
+            }
+        }
+    }
+
     private void LateUpdate()
     {
         if (target == null) return;
