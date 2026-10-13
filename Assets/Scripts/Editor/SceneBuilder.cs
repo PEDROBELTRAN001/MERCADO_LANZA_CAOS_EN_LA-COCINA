@@ -332,12 +332,21 @@ public class SceneBuilder : EditorWindow
     {
         GameObject gm = new GameObject("GameManager");
         gm.transform.position = Vector3.zero;
-        gm.AddComponent<GameManager>();
+        // Balance de la partida (Game Design): 3 minutos, meta de 100 puntos
+        GameManager manager = gm.AddComponent<GameManager>();
+        manager.gameDuration = 180f;
+        manager.targetScore = 100;
         gm.AddComponent<GameHUD>();
 
         GameObject os = new GameObject("OrderSystem");
         os.transform.position = Vector3.zero;
-        os.AddComponent<OrderSystem>();
+        // Un pedido cada 20 s (antes 10: para una persona llegaban demasiados), el primero a los 5 s.
+        // El tiempo de cada pedido lo define su receta (BuildRecipes); -10 puntos si vence.
+        OrderSystem orders = os.AddComponent<OrderSystem>();
+        orders.orderInterval = 20f;
+        orders.firstOrderDelay = 5f;
+        orders.orderTimeLimit = 45f;
+        orders.expiredPenalty = 10;
 
         GameObject input = new GameObject("SimpleInput");
         input.AddComponent<SimpleInput>();
@@ -475,20 +484,20 @@ public class SceneBuilder : EditorWindow
         CreateRecipe(folder, "PlatoPaceno", "Plato Paceño", "plato_pacenio.fbx", new Ingredient.IngredientType[] {
             Ingredient.IngredientType.Potato, Ingredient.IngredientType.Corn,
             Ingredient.IngredientType.Bean, Ingredient.IngredientType.Cheese
-        }, false, true, 40);
+        }, false, true, 40, 75f);
 
         // Simplificado: el cerdo ya viene horneado, solo se arma con el pan
         CreateRecipe(folder, "SandwichDeChola", "Sándwich de Chola", "SandwichDeChola.fbx", new Ingredient.IngredientType[] {
             Ingredient.IngredientType.Bread, Ingredient.IngredientType.Meat
-        }, false, false, 25);
+        }, false, false, 25, 45f);
 
         CreateRecipe(folder, "ApiConPastel", "Api con Pastel", "ApiConPastel.fbx", new Ingredient.IngredientType[] {
             Ingredient.IngredientType.PurpleCorn, Ingredient.IngredientType.Dough
-        }, false, true, 30);
+        }, false, true, 30, 60f);
 
         CreateRecipe(folder, "EnsaladaDeFrutas", "Ensalada de Frutas", "EnsaladaDeFrutas.fbx", new Ingredient.IngredientType[] {
             Ingredient.IngredientType.Fruit
-        }, true, false, 20);
+        }, true, false, 20, 40f);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -496,7 +505,7 @@ public class SceneBuilder : EditorWindow
     }
 
     static void CreateRecipe(string folder, string fileName, string displayName, string dishFbx,
-        Ingredient.IngredientType[] ingredients, bool chop, bool cook, int points)
+        Ingredient.IngredientType[] ingredients, bool chop, bool cook, int points, float timeLimit)
     {
         string path = folder + "/" + fileName + ".asset";
         RecipeData recipe = AssetDatabase.LoadAssetAtPath<RecipeData>(path);
@@ -510,6 +519,7 @@ public class SceneBuilder : EditorWindow
         recipe.requiresChopping = chop;
         recipe.requiresCooking = cook;
         recipe.basePoints = points;
+        recipe.timeLimit = timeLimit;
 
         if (isNew) AssetDatabase.CreateAsset(recipe, path);
         else EditorUtility.SetDirty(recipe);

@@ -19,6 +19,10 @@ public class RecipeData : ScriptableObject
     [Header("Scoring")]
     public int basePoints = 25;
 
+    [Header("Balance")]
+    [Tooltip("Segundos que tiene el jugador para entregar este plato (0 = usar el tiempo general de OrderSystem)")]
+    public float timeLimit = 0f;
+
     public bool CheckRecipe(Ingredient[] ingredients)
     {
         if (ingredients.Length != requiredIngredients.Length) return false;

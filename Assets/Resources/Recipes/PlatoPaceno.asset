@@ -19,3 +19,4 @@ MonoBehaviour:
   requiresChopping: 0
   requiresCooking: 1
   basePoints: 40
+  timeLimit: 75

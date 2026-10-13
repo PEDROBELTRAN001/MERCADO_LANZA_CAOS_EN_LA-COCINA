@@ -21,11 +21,33 @@ public class GameHUD : MonoBehaviour
     // Aviso temporal ("¡Plato listo!", "Esta mesa pidio...") que cualquier estacion puede mostrar
     private static string notice;
     private static float noticeUntil;
+    private static bool noticeIsWarning;
 
     public static void Notify(string message, float seconds = 2.5f)
     {
+        // Un aviso normal no tapa una penalizacion que todavia se esta mostrando
+        if (noticeIsWarning && Time.time < noticeUntil) return;
         notice = message;
         noticeUntil = Time.time + seconds;
+        noticeIsWarning = false;
+    }
+
+    // Penalizaciones: en rojo y con prioridad sobre los avisos normales
+    public static void Warn(string message, float seconds = 4f)
+    {
+        notice = message;
+        noticeUntil = Time.time + seconds;
+        noticeIsWarning = true;
+    }
+
+    // Los campos static sobreviven entre una prueba y otra en el editor (si no se recarga el dominio):
+    // sin esto, un aviso de la partida anterior quedaba en pantalla y bloqueaba los nuevos
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ClearNotice()
+    {
+        notice = null;
+        noticeUntil = 0f;
+        noticeIsWarning = false;
     }
 
     private void Update()
@@ -36,9 +58,15 @@ public class GameHUD : MonoBehaviour
         bool enter = Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame;
 
         if (state == GameManager.GameState.Ready && enter)
+        {
+            ClearNotice();
             GameManager.Instance.SetState(GameManager.GameState.Playing);
+        }
         else if (state == GameManager.GameState.GameOver && Keyboard.current.rKey.wasPressedThisFrame)
+        {
+            ClearNotice();
             GameManager.Instance.RestartGame();
+        }
     }
 
     private void OnGUI()
@@ -66,6 +94,8 @@ public class GameHUD : MonoBehaviour
                 DrawCenterPanel("¡SE ACABÓ EL TIEMPO!",
                     "Puntos: " + GameManager.Instance.GetCurrentScore() +
                     "   (meta: " + GameManager.Instance.targetScore + ")\n" +
+                    "Ganados: +" + GameManager.Instance.PointsEarned +
+                    "   ·   Penalizaciones: -" + GameManager.Instance.PointsLost + "\n" +
                     "Pedidos entregados: " + GameManager.Instance.OrdersDelivered +
                     "   ·   Clientes que se fueron sin comer: " + GameManager.Instance.OrdersLost + "\n\n" +
                     (GameManager.Instance.GetCurrentScore() >= GameManager.Instance.targetScore
@@ -88,6 +118,13 @@ public class GameHUD : MonoBehaviour
         Rect s = new Rect(r.x + r.width - Scale(130), r.y, Scale(130), r.height);
         textStyle.normal.textColor = accentColor;
         GUI.Label(Inset(s), "Puntos  " + GameManager.Instance.GetCurrentScore(), textStyle);
+
+        // Panel de penalizaciones a la derecha: clientes perdidos y puntos descontados
+        Rect lost = new Rect(r.x + r.width + Scale(8), r.y, Scale(210), r.height);
+        GUI.DrawTexture(lost, panelTexture);
+        textStyle.normal.textColor = GameManager.Instance.OrdersLost > 0 ? urgentColor : Color.white;
+        string lostPoints = GameManager.Instance.PointsLost > 0 ? "  (-" + GameManager.Instance.PointsLost + ")" : "";
+        GUI.Label(Inset(lost), "Perdidos  " + GameManager.Instance.OrdersLost + lostPoints, textStyle);
         textStyle.normal.textColor = Color.white;
     }
 
@@ -97,7 +134,7 @@ public class GameHUD : MonoBehaviour
         var orders = OrderSystem.Instance.GetActiveOrders();
 
         float line = Scale(30);
-        Rect panel = new Rect(Scale(16), Scale(68), Scale(330), Scale(44) + line * Mathf.Max(1, orders.Count));
+        Rect panel = new Rect(Scale(16), Scale(68), Scale(430), Scale(44) + line * Mathf.Max(1, orders.Count));
         GUI.DrawTexture(panel, panelTexture);
 
         Rect row = new Rect(panel.x + Scale(12), panel.y + Scale(8), panel.width - Scale(24), line);
@@ -153,14 +190,14 @@ public class GameHUD : MonoBehaviour
         float w = Scale(640), h = Scale(44);
         Rect r = new Rect((Screen.width - w) / 2f, Screen.height - h * 2 - Scale(24), w, h);
         GUI.DrawTexture(r, panelTexture);
-        centerStyle.normal.textColor = accentColor;
+        centerStyle.normal.textColor = noticeIsWarning ? urgentColor : accentColor;
         GUI.Label(r, notice, centerStyle);
         centerStyle.normal.textColor = Color.white;
     }
 
     private void DrawCenterPanel(string title, string body)
     {
-        float w = Mathf.Min(Screen.width - Scale(32), Scale(720)), h = Scale(300);
+        float w = Mathf.Min(Screen.width - Scale(32), Scale(760)), h = Scale(340);
         Rect r = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h);
         GUI.DrawTexture(r, panelTexture);
 
@@ -190,7 +227,8 @@ public class GameHUD : MonoBehaviour
         int size = Mathf.RoundToInt(Scale(20));
         if (textStyle == null || textStyle.fontSize != size)
         {
-            textStyle = new GUIStyle(GUI.skin.label) { fontSize = size, alignment = TextAnchor.MiddleLeft };
+            // Sin salto de linea: un texto largo partido en dos se encimaba con la fila siguiente
+            textStyle = new GUIStyle(GUI.skin.label) { fontSize = size, alignment = TextAnchor.MiddleLeft, wordWrap = false, clipping = TextClipping.Clip };
             textStyle.normal.textColor = Color.white;
             titleStyle = new GUIStyle(textStyle) { fontSize = Mathf.RoundToInt(size * 1.3f), fontStyle = FontStyle.Bold };
             centerStyle = new GUIStyle(textStyle) { alignment = TextAnchor.MiddleCenter, wordWrap = true };

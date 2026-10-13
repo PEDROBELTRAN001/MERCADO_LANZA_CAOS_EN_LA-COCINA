@@ -7,8 +7,11 @@ public class OrderSystem : MonoBehaviour
     public static OrderSystem Instance { get; private set; }
 
     [Header("Order Settings")]
-    public float orderInterval = 10f;
-    public float orderTimeLimit = 30f;
+    public float orderInterval = 20f;
+    [Tooltip("Tiempo por pedido si la receta no define el suyo")]
+    public float orderTimeLimit = 45f;
+    [Tooltip("Segundos hasta el primer pedido al empezar la partida")]
+    public float firstOrderDelay = 5f;
     public int maxOrders = 5;
 
     [Header("Penalizacion")]
@@ -79,7 +82,7 @@ public class OrderSystem : MonoBehaviour
 
     private IEnumerator OrderCycle()
     {
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(firstOrderDelay);
 
         while (GameManager.Instance.CurrentState == GameManager.GameState.Playing)
         {
@@ -97,7 +100,9 @@ public class OrderSystem : MonoBehaviour
         if (availableRecipes.Length == 0) return;
 
         RecipeData recipe = availableRecipes[Random.Range(0, availableRecipes.Length)];
-        Order order = new Order(recipe.recipeName, recipe, orderTimeLimit);
+        // Cada plato tiene su tiempo (un Plato Paceño lleva mas pasos que una ensalada)
+        float timeLimit = recipe.timeLimit > 0f ? recipe.timeLimit : orderTimeLimit;
+        Order order = new Order(recipe.recipeName, recipe, timeLimit);
 
         FoodCourtTable freeTable = GetFreeTable();
         if (freeTable != null)
@@ -124,7 +129,7 @@ public class OrderSystem : MonoBehaviour
                 // Penalizacion: el cliente se fue sin comer
                 GameManager.Instance.AddScore(-expiredPenalty);
                 GameManager.Instance.RegisterOrderLost();
-                GameHUD.Notify(table + " se fue sin comer (" + expired.dishName + "): -" + expiredPenalty + " puntos", 3.5f);
+                GameHUD.Warn(table + " se fue sin comer (" + expired.dishName + "): -" + expiredPenalty + " puntos");
 
                 OnOrderExpired?.Invoke(expired);
                 activeOrders.RemoveAt(i);

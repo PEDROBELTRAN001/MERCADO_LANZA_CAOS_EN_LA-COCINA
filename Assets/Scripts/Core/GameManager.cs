@@ -22,6 +22,8 @@ public class GameManager : MonoBehaviour
     // Resumen de la partida (se muestra en la pantalla final)
     public int OrdersDelivered { get; private set; }
     public int OrdersLost { get; private set; }
+    public int PointsEarned { get; private set; }
+    public int PointsLost { get; private set; }
 
     private void Awake()
     {
@@ -75,6 +77,8 @@ public class GameManager : MonoBehaviour
         currentScore = 0;
         OrdersDelivered = 0;
         OrdersLost = 0;
+        PointsEarned = 0;
+        PointsLost = 0;
         OnGameStarted?.Invoke();
         Debug.Log("Juego iniciado! Tiempo: " + gameDuration);
     }
@@ -88,6 +92,8 @@ public class GameManager : MonoBehaviour
     public void AddScore(int points)
     {
         // Las penalizaciones restan, pero el puntaje no baja de 0
+        if (points >= 0) PointsEarned += points;
+        else PointsLost += -points;
         currentScore = Mathf.Max(0, currentScore + points);
         Debug.Log("Puntuacion: " + currentScore);
     }
