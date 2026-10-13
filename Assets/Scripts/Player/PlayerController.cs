@@ -11,7 +11,6 @@ public class PlayerController : MonoBehaviour
     public LayerMask interactableLayer;
 
     private Vector2 moveInput;
-    private Vector3 moveDirection;
     private Rigidbody rb;
     private Interactable currentInteractable;
 
@@ -24,62 +23,64 @@ public class PlayerController : MonoBehaviour
             rb.freezeRotation = true;
             rb.useGravity = true;
         }
+
+        if (SimpleInput.Instance == null)
+        {
+            GameObject inputObj = new GameObject("SimpleInput");
+            inputObj.AddComponent<SimpleInput>();
+        }
     }
 
     private void Update()
     {
-        HandleInput();
-        HandleInteraction();
+        // 1. Solo leemos el input en Update para mayor precisión
+        moveInput = SimpleInput.Instance != null ? SimpleInput.Instance.MoveInput : Vector2.zero;
+
+        DetectInteractable();
+
+        if (SimpleInput.Instance != null && SimpleInput.Instance.InteractPressed)
+        {
+            TryInteract();
+        }
     }
 
     private void FixedUpdate()
     {
-        Move();
+        // 2. Todo el movimiento y físicas se procesan estrictamente en FixedUpdate
+        HandleMovement();
     }
 
-    private void HandleInput()
+    private void HandleMovement()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-
-        moveInput = new Vector2(horizontal, vertical);
-        moveInput.Normalize();
-
         if (moveInput.magnitude > 0.1f)
         {
-            Vector3 forward = Camera.main.transform.forward;
-            Vector3 right = Camera.main.transform.right;
-            forward.y = 0f;
-            right.y = 0f;
-            forward.Normalize();
-            right.Normalize();
+            Vector3 cameraForward = Camera.main.transform.forward;
+            Vector3 cameraRight = Camera.main.transform.right;
+            cameraForward.y = 0f;
+            cameraRight.y = 0f;
+            cameraForward.Normalize();
+            cameraRight.Normalize();
 
-            moveDirection = (forward * moveInput.y + right * moveInput.x).normalized;
+            Vector3 moveDirection = (cameraForward * moveInput.y + cameraRight * moveInput.x).normalized;
 
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed * Time.fixedDeltaTime
-            );
+            if (moveDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+                rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+            }
+
+            // Usar MovePosition en lugar de alterar la velocidad directamente previene que atraviese paredes
+            Vector3 targetPosition = rb.position + moveDirection * (moveInput.magnitude * moveSpeed * Time.fixedDeltaTime);
+            rb.MovePosition(targetPosition);
         }
-    }
-
-    private void Move()
-    {
-        Vector3 velocity = moveDirection * moveSpeed;
-        velocity.y = rb.linearVelocity.y;
-        rb.linearVelocity = velocity;
-    }
-
-    private void HandleInteraction()
-    {
-        if (Input.GetKeyDown(KeyCode.E))
+        else
         {
-            TryInteract();
+            // Mantener solo la velocidad vertical (gravedad) cuando no hay input
+            Vector3 velocity = rb.linearVelocity;
+            velocity.x = 0f;
+            velocity.z = 0f;
+            rb.linearVelocity = velocity;
         }
-
-        DetectInteractable();
     }
 
     private void DetectInteractable()
@@ -97,16 +98,12 @@ public class PlayerController : MonoBehaviour
         if (newInteractable != currentInteractable)
         {
             if (currentInteractable != null)
-            {
                 currentInteractable.HidePrompt();
-            }
 
             currentInteractable = newInteractable;
 
             if (currentInteractable != null)
-            {
                 currentInteractable.ShowPrompt();
-            }
         }
     }
 
