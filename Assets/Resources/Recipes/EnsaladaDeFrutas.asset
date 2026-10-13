@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 85a277cf08d9c2e4cafacdca5e913e74, type: 3}
-  m_Name: Ensalada
+  m_Name: EnsaladaDeFrutas
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: Ensalada
+  recipeName: Ensalada de Frutas
   recipeIcon: {fileID: 0}
-  requiredIngredients: 0100000000000000i
+  dishPrefab: {fileID: 919132149155446097, guid: f6134df4e392ba44db64aaaeb516d5dc, type: 3}
+  requiredIngredients: 0a000000i
   requiresChopping: 1
   requiresCooking: 0
   basePoints: 20

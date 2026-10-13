@@ -44,7 +44,33 @@ public class OrderSystem : MonoBehaviour
 
         tables = FindObjectsByType<FoodCourtTable>();
 
+        // El ciclo de pedidos arranca cada vez que empieza (o se reinicia) una partida
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameStarted += BeginOrders;
+            if (GameManager.Instance.CurrentState == GameManager.GameState.Playing) BeginOrders();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null) GameManager.Instance.OnGameStarted -= BeginOrders;
+    }
+
+    private void BeginOrders()
+    {
+        StopAllCoroutines();
+        foreach (Order order in activeOrders)
+            if (order.table != null) order.table.ClearOrder();
+        activeOrders.Clear();
         StartCoroutine(OrderCycle());
+    }
+
+    private void Update()
+    {
+        // Los tiempos de los pedidos bajan cada frame (antes solo bajaban una vez cada orderInterval)
+        if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameManager.GameState.Playing)
+            UpdateOrders();
     }
 
     private IEnumerator OrderCycle()
@@ -57,8 +83,6 @@ public class OrderSystem : MonoBehaviour
             {
                 GenerateNewOrder();
             }
-
-            UpdateOrders();
 
             yield return new WaitForSeconds(orderInterval);
         }
@@ -89,6 +113,7 @@ public class OrderSystem : MonoBehaviour
 
             if (activeOrders[i].timeRemaining <= 0)
             {
+                if (activeOrders[i].table != null) activeOrders[i].table.ClearOrder();
                 OnOrderExpired?.Invoke(activeOrders[i]);
                 activeOrders.RemoveAt(i);
                 Debug.Log("Pedido expirado!");

@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 85a277cf08d9c2e4cafacdca5e913e74, type: 3}
-  m_Name: Sandwich
+  m_Name: SandwichDeChola
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: Sandwich
+  recipeName: "S\xE1ndwich de Chola"
   recipeIcon: {fileID: 0}
-  requiredIngredients: 020000000100000000000000i
-  requiresChopping: 1
+  dishPrefab: {fileID: 919132149155446097, guid: 5a0ac288cb3e227449f4433a288e8602, type: 3}
+  requiredIngredients: 0200000003000000i
+  requiresChopping: 0
   requiresCooking: 0
-  basePoints: 15
+  basePoints: 25

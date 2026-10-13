@@ -300,6 +300,7 @@ public class SceneBuilder : EditorWindow
         GameObject gm = new GameObject("GameManager");
         gm.transform.position = Vector3.zero;
         gm.AddComponent<GameManager>();
+        gm.AddComponent<GameHUD>();
 
         GameObject os = new GameObject("OrderSystem");
         os.transform.position = Vector3.zero;
@@ -347,36 +348,53 @@ public class SceneBuilder : EditorWindow
         if (!AssetDatabase.IsValidFolder(folder))
             AssetDatabase.CreateFolder("Assets/Resources", "Recipes");
 
-        CreateRecipe(folder, "Hamburguesa", new Ingredient.IngredientType[] {
-            Ingredient.IngredientType.Bread, Ingredient.IngredientType.Meat, Ingredient.IngredientType.Cheese
-        }, true, true, 25);
+        // Recetas de prueba anteriores (no son del mercado paceño): se eliminan
+        foreach (string old in new[] { "Hamburguesa", "Ensalada", "Sandwich" })
+            AssetDatabase.DeleteAsset(folder + "/" + old + ".asset");
 
-        CreateRecipe(folder, "Ensalada", new Ingredient.IngredientType[] {
-            Ingredient.IngredientType.Lettuce, Ingredient.IngredientType.Tomato
+        // Platos del juego, con el modelo de Blender de cada uno.
+        // RecipeData.CheckRecipe exige picar/cocinar TODOS los ingredientes de la receta.
+        CreateRecipe(folder, "PlatoPaceno", "Plato Paceño", "plato_pacenio.fbx", new Ingredient.IngredientType[] {
+            Ingredient.IngredientType.Potato, Ingredient.IngredientType.Corn,
+            Ingredient.IngredientType.Bean, Ingredient.IngredientType.Cheese
+        }, false, true, 40);
+
+        // Simplificado: el cerdo ya viene horneado, solo se arma con el pan
+        CreateRecipe(folder, "SandwichDeChola", "Sándwich de Chola", "SandwichDeChola.fbx", new Ingredient.IngredientType[] {
+            Ingredient.IngredientType.Bread, Ingredient.IngredientType.Meat
+        }, false, false, 25);
+
+        CreateRecipe(folder, "ApiConPastel", "Api con Pastel", "ApiConPastel.fbx", new Ingredient.IngredientType[] {
+            Ingredient.IngredientType.PurpleCorn, Ingredient.IngredientType.Dough
+        }, false, true, 30);
+
+        CreateRecipe(folder, "EnsaladaDeFrutas", "Ensalada de Frutas", "EnsaladaDeFrutas.fbx", new Ingredient.IngredientType[] {
+            Ingredient.IngredientType.Fruit
         }, true, false, 20);
-
-        CreateRecipe(folder, "Sandwich", new Ingredient.IngredientType[] {
-            Ingredient.IngredientType.Bread, Ingredient.IngredientType.Lettuce, Ingredient.IngredientType.Tomato
-        }, true, false, 15);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("Recetas creadas en " + folder);
     }
 
-    static void CreateRecipe(string folder, string name, Ingredient.IngredientType[] ingredients, bool chop, bool cook, int points)
+    static void CreateRecipe(string folder, string fileName, string displayName, string dishFbx,
+        Ingredient.IngredientType[] ingredients, bool chop, bool cook, int points)
     {
-        string path = folder + "/" + name + ".asset";
-        RecipeData existing = AssetDatabase.LoadAssetAtPath<RecipeData>(path);
-        if (existing != null) return;
+        string path = folder + "/" + fileName + ".asset";
+        RecipeData recipe = AssetDatabase.LoadAssetAtPath<RecipeData>(path);
+        bool isNew = recipe == null;
+        if (isNew) recipe = ScriptableObject.CreateInstance<RecipeData>();
 
-        RecipeData recipe = ScriptableObject.CreateInstance<RecipeData>();
-        recipe.recipeName = name;
+        // Si ya existe se actualiza, para que los cambios de diseño se apliquen al reconstruir
+        recipe.recipeName = displayName;
+        recipe.dishPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/" + dishFbx);
         recipe.requiredIngredients = ingredients;
         recipe.requiresChopping = chop;
         recipe.requiresCooking = cook;
         recipe.basePoints = points;
-        AssetDatabase.CreateAsset(recipe, path);
+
+        if (isNew) AssetDatabase.CreateAsset(recipe, path);
+        else EditorUtility.SetDirty(recipe);
     }
 
     // ==================== PLATOS - COMIDA (modelos de Blender exportados como FBX) ====================

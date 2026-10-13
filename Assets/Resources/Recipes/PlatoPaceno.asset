@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 85a277cf08d9c2e4cafacdca5e913e74, type: 3}
-  m_Name: Hamburguesa
+  m_Name: PlatoPaceno
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: Hamburguesa
+  recipeName: "Plato Pace\xF1o"
   recipeIcon: {fileID: 0}
-  requiredIngredients: 020000000300000004000000i
-  requiresChopping: 1
+  dishPrefab: {fileID: 919132149155446097, guid: ea753052a6ce84141bfd84964e1c099e, type: 3}
+  requiredIngredients: 05000000060000000700000004000000i
+  requiresChopping: 0
   requiresCooking: 1
-  basePoints: 25
+  basePoints: 40

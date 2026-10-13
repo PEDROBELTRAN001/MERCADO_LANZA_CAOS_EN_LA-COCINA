@@ -6,6 +6,8 @@ public class RecipeData : ScriptableObject
     [Header("Recipe Info")]
     public string recipeName = "Hamburguesa";
     public Sprite recipeIcon;
+    [Tooltip("Modelo del plato terminado (FBX de Assets/Prefabs)")]
+    public GameObject dishPrefab;
 
     [Header("Ingredients")]
     public Ingredient.IngredientType[] requiredIngredients;

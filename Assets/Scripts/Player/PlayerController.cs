@@ -14,6 +14,9 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rb;
     private Interactable currentInteractable;
 
+    // Lo que el jugador tiene enfrente (lo usa el HUD para mostrar "E · ...")
+    public Interactable CurrentInteractable => currentInteractable;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();

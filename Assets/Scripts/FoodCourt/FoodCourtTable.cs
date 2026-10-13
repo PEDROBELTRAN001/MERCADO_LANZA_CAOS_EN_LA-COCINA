@@ -58,7 +58,16 @@ public class FoodCourtTable : Interactable
     public void SetOrder(Order order)
     {
         currentOrder = order;
+        order.table = this;
         hasOrder = true;
+        orderCompleted = false;
+    }
+
+    // Libera la mesa cuando el pedido vence (si no, queda ocupada para siempre)
+    public void ClearOrder()
+    {
+        currentOrder = null;
+        hasOrder = false;
         orderCompleted = false;
     }
 
@@ -75,6 +84,7 @@ public class Order
     public RecipeData recipe;
     public float timeLimit;
     public float timeRemaining;
+    public FoodCourtTable table;
 
     public Order(string name, RecipeData recipeData, float time)
     {

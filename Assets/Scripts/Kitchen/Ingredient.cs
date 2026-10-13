@@ -20,8 +20,15 @@ public class Ingredient : MonoBehaviour
         Tomato,
         Lettuce,
         Bread,
-        Meat,
-        Cheese
+        Meat,       // cerdo del sandwich de chola
+        Cheese,
+        // Ingredientes bolivianos (agregados al final para no cambiar los valores ya guardados)
+        Potato,     // papa
+        Corn,       // choclo
+        Bean,       // haba
+        PurpleCorn, // maiz morado (api)
+        Dough,      // masa de pastel
+        Fruit       // fruta picada
     }
 
     private void Start()

@@ -12,7 +12,14 @@ public class IngredientPickup : Interactable
         Lettuce,
         Bread,
         Meat,
-        Cheese
+        Cheese,
+        // Mismo orden que Ingredient.IngredientType
+        Potato,
+        Corn,
+        Bean,
+        PurpleCorn,
+        Dough,
+        Fruit
     }
 
     public override void Interact(PlayerController player)
