@@ -4,6 +4,10 @@ public class Interactable : MonoBehaviour
 {
     [Header("Interaction Settings")]
     public string interactionPrompt = "Presiona E";
+    [Tooltip("Nombre que ve el jugador en el HUD (si esta vacio se usa el nombre del objeto)")]
+    public string displayName;
+
+    public string DisplayName => string.IsNullOrEmpty(displayName) ? name.Replace("_", " ") : displayName;
     public bool requiresItem = false;
     public string requiredItemTag = "";
 

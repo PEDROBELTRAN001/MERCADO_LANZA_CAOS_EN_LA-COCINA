@@ -14,9 +14,14 @@ public class WashingStation : Interactable
     private void WashPlate(PlayerController player)
     {
         Transform hand = player.transform.Find("Hand");
-        if (hand == null || hand.childCount == 0)
+        if (hand == null) return;
+        if (hand.childCount == 0)
         {
-            Debug.Log("No tienes un plato sucio");
+            // Con la mano vacia el lavaplatos entrega un plato limpio para armar el pedido
+            Plate clean = Plate.Create();
+            clean.transform.SetParent(hand, false);
+            clean.transform.localPosition = Vector3.zero;
+            GameHUD.Notify("Plato limpio: llévalo a la mesa de armado");
             return;
         }
 
@@ -32,7 +37,7 @@ public class WashingStation : Interactable
         }
         else
         {
-            Debug.Log("Este plato no necesita lavarse");
+            GameHUD.Notify("Para tomar un plato limpio, ven con la mano vacía");
         }
     }
 }

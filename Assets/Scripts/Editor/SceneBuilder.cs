@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 public class SceneBuilder : EditorWindow
@@ -20,7 +20,7 @@ public class SceneBuilder : EditorWindow
         // Limpiar escena anterior
         GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         System.Collections.Generic.List<GameObject> toDestroy = new System.Collections.Generic.List<GameObject>();
-        string[] prefixes = { "Wall_", "Floor_", "Counter_", "Stove", "Oven", "Prep", "Washing", "Plate", "Trash", "Stair", "Step_", "Mesa", "Serving", "Player", "GameManager", "OrderSystem", "SimpleInput", "Tomate", "Lechuga", "Pan", "Railing", "Prompt_", "Plato_", "Api_" };
+        string[] prefixes = { "Wall_", "Floor_", "Counter_", "Stove", "Oven", "Prep", "Washing", "Plate", "Trash", "Stair", "Step_", "Mesa", "Serving", "Player", "GameManager", "OrderSystem", "SimpleInput", "Tomate", "Lechuga", "Pan", "Railing", "Prompt_", "Plato_", "Api_", "Insumo_", "Rotulo_" };
 
         foreach (GameObject obj in allObjects)
         {
@@ -58,6 +58,7 @@ public class SceneBuilder : EditorWindow
         BuildRecipes();
 
         DonaRosaBuilder.Integrate();
+        BuildStationLabels();
     }
 
     static Material CreateMaterial(string name, Color color)
@@ -160,19 +161,51 @@ public class SceneBuilder : EditorWindow
 
         // Preparacion
         GameObject p1 = CreatePrimitive(PrimitiveType.Cube, "Prep_1", new Vector3(-9, 0.45f, -3.5f), new Vector3(1.8f, 0.9f, 1.2f), prepMat);
-        p1.AddComponent<ChoppingStation>();
+        p1.AddComponent<ChoppingStation>().displayName = "Tabla de picar";
 
         // Lavabo
         GameObject w = CreatePrimitive(PrimitiveType.Cube, "WashingStation", new Vector3(-14.3f, 0.45f, 0), new Vector3(1.2f, 0.9f, 1.8f), washMat);
-        w.AddComponent<WashingStation>();
+        WashingStation washing = w.AddComponent<WashingStation>();
+        washing.displayName = "Lavaplatos";
+        washing.interactionPrompt = "E · Tomar plato limpio";
+        BuildSinkDecor(w.transform.position);
 
-        // Platos
-        GameObject d = CreatePrimitive(PrimitiveType.Cube, "PlateStation", new Vector3(-3.7f, 0.45f, 0), new Vector3(1.2f, 0.9f, 1.8f), prepMat);
-        d.AddComponent<PlateStation>();
+        // Mesa de armado: los ingredientes listos se juntan aqui y se convierten en el plato del pedido
+        GameObject d = CreatePrimitive(PrimitiveType.Cube, "Mesa_Armado", new Vector3(-3.7f, 0.45f, 0), new Vector3(1.2f, 0.9f, 1.8f), prepMat);
+        AssemblyStation assembly = d.AddComponent<AssemblyStation>();
+        assembly.displayName = "Mesa de armado";
+        assembly.interactionPrompt = "E · Dejar ingrediente / recoger plato";
 
         // Basura
         GameObject t = CreatePrimitive(PrimitiveType.Cube, "TrashStation", new Vector3(-3.7f, 0.45f, 3f), new Vector3(1.2f, 0.9f, 1.2f), trashMat);
-        t.AddComponent<TrashStation>();
+        TrashStation trash = t.AddComponent<TrashStation>();
+        trash.displayName = "Basura";
+        trash.interactionPrompt = "E · Tirar lo que llevas";
+    }
+
+    // Aspecto de lavaplatos sobre la estacion (antes era un cubo igual al mostrador y no se distinguia):
+    // pileta de acero con agua, grifo junto a la pared y una pila de platos limpios.
+    // Nombres con prefijo "Washing" para que la limpieza del SceneBuilder los borre al reconstruir.
+    static void BuildSinkDecor(Vector3 station)
+    {
+        Material steel = CreateURPMaterial("LavaplatosAceroMaterial", new Color(0.72f, 0.76f, 0.8f));
+        Material water = CreateURPMaterial("LavaplatosAguaMaterial", new Color(0.35f, 0.55f, 0.7f));
+        Material plateMat = CreateURPMaterial("LavaplatosLozaMaterial", new Color(0.95f, 0.95f, 0.97f));
+        float top = station.y + 0.45f;
+
+        Decor(PrimitiveType.Cube, "Washing_Pileta", station + new Vector3(0f, 0.48f, -0.35f), new Vector3(1.0f, 0.08f, 1.0f), steel);
+        Decor(PrimitiveType.Cube, "Washing_Agua", station + new Vector3(0.05f, 0.525f, -0.35f), new Vector3(0.75f, 0.02f, 0.8f), water);
+        Decor(PrimitiveType.Cylinder, "Washing_Grifo", new Vector3(station.x - 0.45f, top + 0.25f, station.z - 0.35f), new Vector3(0.07f, 0.25f, 0.07f), steel);
+        Decor(PrimitiveType.Cube, "Washing_Caño", new Vector3(station.x - 0.3f, top + 0.48f, station.z - 0.35f), new Vector3(0.3f, 0.05f, 0.05f), steel);
+
+        for (int i = 0; i < 4; i++)
+            Decor(PrimitiveType.Cylinder, "Washing_Plato_" + i, new Vector3(station.x, top + 0.02f + i * 0.04f, station.z + 0.5f), new Vector3(0.5f, 0.015f, 0.5f), plateMat);
+    }
+
+    static void Decor(PrimitiveType type, string name, Vector3 position, Vector3 scale, Material mat)
+    {
+        GameObject obj = CreatePrimitive(type, name, position, scale, mat);
+        DestroyImmediate(obj.GetComponent<Collider>()); // la interaccion la da el colisionador de la estacion
     }
 
     // ==================== PATIO DE COMIDAS (al lado de la cocina, mismo nivel) ====================
@@ -311,32 +344,117 @@ public class SceneBuilder : EditorWindow
     }
 
     // ==================== INGREDIENTES ====================
+    // Cajas de insumos infinitas, en fila frente al estante de Doña Rosa (z = 4.2, x = -13 .. -8.6):
+    // libre de la barra de pedidos (x > -8.2), del mostrador oeste y de las cajas/sacos de la esquina.
     static void BuildIngredients()
     {
-        Material tomatoMat = CreateMaterial("TomatoMaterial", new Color(1f, 0.2f, 0.1f));
-        Material lettuceMat = CreateMaterial("LettuceMaterial", new Color(0.1f, 0.7f, 0.2f));
-        Material breadMat = CreateMaterial("BreadMaterial", new Color(1f, 0.85f, 0.4f));
+        Material crateMat = CreateMaterial("CounterMaterial", new Color(0.63f, 0.39f, 0.2f));
 
-        // Tomate
-        GameObject tomate = CreatePrimitive(PrimitiveType.Sphere, "Tomate", new Vector3(-9f, 1.0f, -3.5f), new Vector3(0.35f, 0.35f, 0.35f), tomatoMat);
-        tomate.AddComponent<IngredientPickup>().ingredientName = "Tomate";
-        tomate.GetComponent<IngredientPickup>().ingredientType = IngredientPickup.IngredientType.Tomato;
-        tomate.AddComponent<Ingredient>().ingredientName = "Tomate";
-        tomate.GetComponent<Ingredient>().ingredientType = Ingredient.IngredientType.Tomato;
+        BuildCrate(0, "Papa", true, Ingredient.IngredientType.Potato, new Color(0.76f, 0.60f, 0.42f), PrimitiveType.Sphere, crateMat);
+        BuildCrate(1, "Choclo", false, Ingredient.IngredientType.Corn, new Color(0.98f, 0.84f, 0.42f), PrimitiveType.Capsule, crateMat);
+        BuildCrate(2, "Haba", true, Ingredient.IngredientType.Bean, new Color(0.42f, 0.62f, 0.20f), PrimitiveType.Sphere, crateMat);
+        BuildCrate(3, "Queso", false, Ingredient.IngredientType.Cheese, new Color(1f, 0.95f, 0.70f), PrimitiveType.Cube, crateMat);
+        BuildCrate(4, "Pan", false, Ingredient.IngredientType.Bread, new Color(0.90f, 0.70f, 0.40f), PrimitiveType.Sphere, crateMat);
+        BuildCrate(5, "Cerdo", false, Ingredient.IngredientType.Meat, new Color(0.75f, 0.40f, 0.35f), PrimitiveType.Cube, crateMat);
+        BuildCrate(6, "Maíz morado", false, Ingredient.IngredientType.PurpleCorn, new Color(0.40f, 0.15f, 0.45f), PrimitiveType.Capsule, crateMat);
+        BuildCrate(7, "Masa", true, Ingredient.IngredientType.Dough, new Color(0.95f, 0.90f, 0.80f), PrimitiveType.Sphere, crateMat);
+        BuildCrate(8, "Fruta", true, Ingredient.IngredientType.Fruit, new Color(0.90f, 0.25f, 0.30f), PrimitiveType.Sphere, crateMat);
+    }
 
-        // Lechuga
-        GameObject lechuga = CreatePrimitive(PrimitiveType.Sphere, "Lechuga", new Vector3(-8.5f, 1.0f, -3.5f), new Vector3(0.4f, 0.3f, 0.4f), lettuceMat);
-        lechuga.AddComponent<IngredientPickup>().ingredientName = "Lechuga";
-        lechuga.GetComponent<IngredientPickup>().ingredientType = IngredientPickup.IngredientType.Lettuce;
-        lechuga.AddComponent<Ingredient>().ingredientName = "Lechuga";
-        lechuga.GetComponent<Ingredient>().ingredientType = Ingredient.IngredientType.Lettuce;
+    static void BuildCrate(int index, string ingredient, bool femenino, Ingredient.IngredientType type, Color color, PrimitiveType shape, Material crateMat)
+    {
+        // Raiz sin escala (los hijos no se deforman) con el colisionador y el script.
+        // Prefijo "Insumo_" (no "Caja_": el estante de Doña Rosa ya tiene piezas "Caja_PAPA"...)
+        GameObject crate = new GameObject("Insumo_" + ingredient.Replace(" ", "_"));
+        crate.transform.position = new Vector3(-13f + index * 0.55f, 0f, 4.2f);
+        BoxCollider col = crate.AddComponent<BoxCollider>();
+        col.center = new Vector3(0, 0.3f, 0);
+        col.size = new Vector3(0.5f, 0.6f, 0.5f);
 
-        // Pan
-        GameObject pan = CreatePrimitive(PrimitiveType.Cube, "Pan", new Vector3(-9.5f, 1.0f, -3.5f), new Vector3(0.4f, 0.25f, 0.4f), breadMat);
-        pan.AddComponent<IngredientPickup>().ingredientName = "Pan";
-        pan.GetComponent<IngredientPickup>().ingredientType = IngredientPickup.IngredientType.Bread;
-        pan.AddComponent<Ingredient>().ingredientName = "Pan";
-        pan.GetComponent<Ingredient>().ingredientType = Ingredient.IngredientType.Bread;
+        IngredientCrate supply = crate.AddComponent<IngredientCrate>();
+        supply.ingredientName = ingredient;
+        supply.femenino = femenino;
+        supply.ingredientType = type;
+        supply.color = color;
+        supply.shape = shape;
+        supply.size = shape == PrimitiveType.Capsule ? new Vector3(0.15f, 0.15f, 0.15f) : new Vector3(0.25f, 0.25f, 0.25f);
+        supply.interactionPrompt = "E · Sacar " + ingredient.ToLower();
+        supply.displayName = "Caja de " + ingredient.ToLower();
+
+        // Caja de madera
+        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        Object.DestroyImmediate(box.GetComponent<Collider>());
+        box.name = "Caja";
+        box.transform.SetParent(crate.transform, false);
+        box.transform.localPosition = new Vector3(0, 0.25f, 0);
+        box.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+        box.GetComponent<Renderer>().sharedMaterial = crateMat;
+
+        // Muestra del ingrediente encima (color del insumo)
+        GameObject sample = GameObject.CreatePrimitive(shape);
+        Object.DestroyImmediate(sample.GetComponent<Collider>());
+        sample.name = "Muestra";
+        sample.transform.SetParent(crate.transform, false);
+        sample.transform.localPosition = new Vector3(0, 0.6f, 0);
+        sample.transform.localScale = supply.size * 1.2f;
+        sample.GetComponent<Renderer>().sharedMaterial = CreateURPMaterial("Insumo_" + type, color);
+
+        // Nombre legible desde la camara de arriba
+        GameObject label = new GameObject("Rotulo");
+        label.transform.SetParent(crate.transform, false);
+        label.transform.localPosition = new Vector3(0, 0.95f, -0.1f);
+        label.transform.localRotation = Quaternion.Euler(50f, 0f, 0f);
+        TextMesh text = label.AddComponent<TextMesh>();
+        text.text = ingredient.ToUpper().Replace(" ", "\n");
+        text.fontSize = 48;
+        text.characterSize = 0.02f;
+        text.anchor = TextAnchor.MiddleCenter;
+        text.color = LabelColor;
+    }
+
+    // ==================== ROTULOS DE ESTACIONES ====================
+    // Texto oscuro (el piso de la cocina es blanco), inclinado hacia la camara de arriba
+    static readonly Color LabelColor = new Color(0.08f, 0.2f, 0.16f);
+
+    // Se llama despues de DonaRosaBuilder.Integrate, que mueve la tabla de picar y arma las hornallas
+    static void BuildStationLabels()
+    {
+        // Las estaciones pegadas a una pared llevan el rotulo corrido hacia el centro de la cocina
+        AddLabel("Prep_1", "TABLA DE PICAR", Vector3.zero);
+        AddLabel("Mesa_Armado", "MESA DE ARMADO", new Vector3(-1.4f, 0f, 0f));
+        AddLabel("TrashStation", "BASURA", new Vector3(-0.9f, 0f, -0.9f));
+        AddLabel("WashingStation", "LAVAPLATOS\n(platos limpios)", new Vector3(1.6f, 0f, 0f));
+
+        GameObject cocina = GameObject.Find("COCINA_DOÑA_ROSA");
+        if (cocina != null)
+        {
+            Transform stove = cocina.transform.Find("01_Fogon_Industrial");
+            if (stove != null) AddLabel(stove.gameObject, "HORNALLAS (cocinar)", Vector3.zero);
+        }
+    }
+
+    static void AddLabel(string objectName, string text, Vector3 offset)
+    {
+        GameObject target = GameObject.Find(objectName);
+        if (target != null) AddLabel(target, text, offset);
+    }
+
+    static void AddLabel(GameObject target, string text, Vector3 offset)
+    {
+        // Encima de lo que se ve del objeto; raiz propia para no heredar la escala del cubo
+        Bounds bounds = new Bounds(target.transform.position, Vector3.zero);
+        foreach (Renderer r in target.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(r.bounds);
+
+        GameObject label = new GameObject("Rotulo_" + target.name);
+        label.transform.position = new Vector3(bounds.center.x, bounds.max.y + 0.5f, bounds.center.z) + offset;
+        label.transform.rotation = Quaternion.Euler(50f, 0f, 0f);
+        TextMesh mesh = label.AddComponent<TextMesh>();
+        mesh.text = text;
+        mesh.fontSize = 64;
+        mesh.characterSize = 0.04f;
+        mesh.fontStyle = FontStyle.Bold;
+        mesh.anchor = TextAnchor.MiddleCenter;
+        mesh.color = LabelColor;
     }
 
     // ==================== RECETAS ====================

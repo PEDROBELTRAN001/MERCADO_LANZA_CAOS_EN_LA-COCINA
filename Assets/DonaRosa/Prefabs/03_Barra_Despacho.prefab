@@ -933,6 +933,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KitchenCounter
   interactionPrompt: "E \xB7 Dejar / recoger pedido"
+  displayName: 
   requiresItem: 0
   requiredItemTag: 
   itemSlot: {fileID: 8454679339486233270}

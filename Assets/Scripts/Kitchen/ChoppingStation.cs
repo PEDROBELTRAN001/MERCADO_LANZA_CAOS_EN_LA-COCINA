@@ -44,7 +44,8 @@ public class ChoppingStation : KitchenCounter
             Ingredient ingredient = storedItem.GetComponent<Ingredient>();
             if (ingredient != null)
             {
-                ingredient.isChopped = true;
+                ingredient.MarkChopped();
+                GameHUD.Notify("Listo: " + ingredient.DisplayName + " (recógelo con E)");
                 Debug.Log("Picado completo: " + storedItem.name);
             }
         }

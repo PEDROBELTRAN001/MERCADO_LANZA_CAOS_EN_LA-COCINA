@@ -55,7 +55,8 @@ public class CookingStation : KitchenCounter
             Ingredient ingredient = storedItem.GetComponent<Ingredient>();
             if (ingredient != null)
             {
-                ingredient.isCooked = true;
+                ingredient.MarkCooked();
+                GameHUD.Notify("Listo: " + ingredient.DisplayName + " (recógelo con E)");
                 Debug.Log("Coccion completa: " + storedItem.name);
             }
         }

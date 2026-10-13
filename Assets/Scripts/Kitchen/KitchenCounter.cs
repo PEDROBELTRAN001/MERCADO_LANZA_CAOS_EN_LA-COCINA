@@ -27,7 +27,13 @@ public class KitchenCounter : Interactable
         if (storedItem != null)
         {
             Transform hand = player.transform.Find("Hand");
-            if (hand == null || hand.childCount > 0) return;
+            if (hand == null) return;
+            if (hand.childCount > 0)
+            {
+                // Cada estacion sostiene una sola cosa: avisar en vez de no hacer nada
+                GameHUD.Notify(DisplayName + " ya tiene: " + storedItem.name + ". Recógelo primero con la mano vacía", 3.5f);
+                return;
+            }
             storedItem.transform.SetParent(hand, false);
             storedItem.transform.localPosition = Vector3.zero;
             isOccupied = false;
@@ -42,11 +48,27 @@ public class KitchenCounter : Interactable
         if (playerHand != null && playerHand.childCount > 0)
         {
             Transform item = playerHand.GetChild(0);
-            item.SetParent(itemSlot != null ? itemSlot : transform);
-            item.localPosition = Vector3.zero;
+            if (itemSlot != null)
+            {
+                item.SetParent(itemSlot);
+                item.localPosition = Vector3.zero;
+            }
+            else
+            {
+                // Sin punto de colocacion: se apoya encima del mueble (antes quedaba escondido en su centro
+                // y deformado por la escala del cubo)
+                item.SetParent(null);
+                Collider body = GetComponent<Collider>();
+                float top = body != null ? body.bounds.max.y : transform.position.y;
+                item.position = new Vector3(transform.position.x, top + 0.15f, transform.position.z);
+            }
             storedItem = item.gameObject;
             isOccupied = true;
             Debug.Log("Colocado: " + item.name);
+        }
+        else
+        {
+            GameHUD.Notify(DisplayName + " está vacía: trae un ingrediente para dejarlo aquí");
         }
     }
 

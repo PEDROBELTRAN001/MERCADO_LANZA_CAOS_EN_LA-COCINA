@@ -87,14 +87,25 @@ public class PlayerController : MonoBehaviour
 
     private void DetectInteractable()
     {
-        Ray ray = new Ray(transform.position + Vector3.up, transform.forward);
-        RaycastHit hit;
+        // Esfera delante del jugador: detecta estaciones de cualquier altura (un rayo a la altura del
+        // pecho pasaba por encima de mostradores y mesas de 0.9 m). Gana la mas cercana al centro.
+        float radius = interactionRange * 0.6f;
+        Vector3 center = transform.position + transform.forward * radius;
+        Collider[] hits = Physics.OverlapSphere(center, radius, interactableLayer, QueryTriggerInteraction.Collide);
 
         Interactable newInteractable = null;
-
-        if (Physics.Raycast(ray, out hit, interactionRange, interactableLayer))
+        float best = float.MaxValue;
+        foreach (Collider hit in hits)
         {
-            newInteractable = hit.collider.GetComponent<Interactable>();
+            Interactable candidate = hit.GetComponentInParent<Interactable>();
+            if (candidate == null || candidate.transform.IsChildOf(transform)) continue;
+
+            float distance = (hit.ClosestPoint(center) - center).sqrMagnitude;
+            if (distance < best)
+            {
+                best = distance;
+                newInteractable = candidate;
+            }
         }
 
         if (newInteractable != currentInteractable)

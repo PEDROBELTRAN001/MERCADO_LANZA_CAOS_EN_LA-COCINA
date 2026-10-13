@@ -18,6 +18,16 @@ public class GameHUD : MonoBehaviour
     private GUIStyle textStyle, titleStyle, centerStyle;
     private Texture2D panelTexture;
 
+    // Aviso temporal ("¡Plato listo!", "Esta mesa pidio...") que cualquier estacion puede mostrar
+    private static string notice;
+    private static float noticeUntil;
+
+    public static void Notify(string message, float seconds = 2.5f)
+    {
+        notice = message;
+        noticeUntil = Time.time + seconds;
+    }
+
     private void Update()
     {
         if (GameManager.Instance == null || Keyboard.current == null) return;
@@ -49,6 +59,7 @@ public class GameHUD : MonoBehaviour
                 DrawTopBar();
                 DrawOrders();
                 DrawInteraction();
+                DrawNotice();
                 break;
 
             case GameManager.GameState.GameOver:
@@ -123,7 +134,7 @@ public class GameHUD : MonoBehaviour
         if (target != null)
         {
             string action = string.IsNullOrEmpty(target.interactionPrompt) ? "E" : target.interactionPrompt;
-            text += (text.Length > 0 ? "      " : "") + action + "  →  " + target.name.Replace("_", " ");
+            text += (text.Length > 0 ? "      " : "") + action + "  →  " + target.DisplayName;
         }
         if (text.Length == 0) return;
 
@@ -131,6 +142,18 @@ public class GameHUD : MonoBehaviour
         Rect r = new Rect((Screen.width - w) / 2f, Screen.height - h - Scale(16), w, h);
         GUI.DrawTexture(r, panelTexture);
         GUI.Label(r, text, centerStyle);
+    }
+
+    private void DrawNotice()
+    {
+        if (string.IsNullOrEmpty(notice) || Time.time > noticeUntil) return;
+
+        float w = Scale(640), h = Scale(44);
+        Rect r = new Rect((Screen.width - w) / 2f, Screen.height - h * 2 - Scale(24), w, h);
+        GUI.DrawTexture(r, panelTexture);
+        centerStyle.normal.textColor = accentColor;
+        GUI.Label(r, notice, centerStyle);
+        centerStyle.normal.textColor = Color.white;
     }
 
     private void DrawCenterPanel(string title, string body)
