@@ -11,6 +11,10 @@ public class OrderSystem : MonoBehaviour
     public float orderTimeLimit = 30f;
     public int maxOrders = 5;
 
+    [Header("Penalizacion")]
+    [Tooltip("Puntos que se pierden cuando un pedido vence (el cliente se va sin comer)")]
+    public int expiredPenalty = 10;
+
     [Header("References")]
     public FoodCourtTable[] tables;
 
@@ -113,8 +117,16 @@ public class OrderSystem : MonoBehaviour
 
             if (activeOrders[i].timeRemaining <= 0)
             {
-                if (activeOrders[i].table != null) activeOrders[i].table.ClearOrder();
-                OnOrderExpired?.Invoke(activeOrders[i]);
+                Order expired = activeOrders[i];
+                string table = expired.table != null ? expired.table.DisplayName : "Una mesa";
+                if (expired.table != null) expired.table.ClearOrder();
+
+                // Penalizacion: el cliente se fue sin comer
+                GameManager.Instance.AddScore(-expiredPenalty);
+                GameManager.Instance.RegisterOrderLost();
+                GameHUD.Notify(table + " se fue sin comer (" + expired.dishName + "): -" + expiredPenalty + " puntos", 3.5f);
+
+                OnOrderExpired?.Invoke(expired);
                 activeOrders.RemoveAt(i);
                 Debug.Log("Pedido expirado!");
             }
@@ -126,6 +138,7 @@ public class OrderSystem : MonoBehaviour
         if (activeOrders.Contains(order))
         {
             activeOrders.Remove(order);
+            GameManager.Instance.RegisterOrderDelivered();
             OnOrderCompleted?.Invoke(order);
 
             float timeBonus = order.timeRemaining / order.timeLimit;

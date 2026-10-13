@@ -65,7 +65,9 @@ public class GameHUD : MonoBehaviour
             case GameManager.GameState.GameOver:
                 DrawCenterPanel("¡SE ACABÓ EL TIEMPO!",
                     "Puntos: " + GameManager.Instance.GetCurrentScore() +
-                    "   (meta: " + GameManager.Instance.targetScore + ")\n\n" +
+                    "   (meta: " + GameManager.Instance.targetScore + ")\n" +
+                    "Pedidos entregados: " + GameManager.Instance.OrdersDelivered +
+                    "   ·   Clientes que se fueron sin comer: " + GameManager.Instance.OrdersLost + "\n\n" +
                     (GameManager.Instance.GetCurrentScore() >= GameManager.Instance.targetScore
                         ? "¡Doña Rosa está orgullosa!" : "Los caseros se fueron con hambre...") +
                     "\n\nPresiona R para jugar otra vez");
@@ -171,7 +173,8 @@ public class GameHUD : MonoBehaviour
     }
 
     // Escala la interfaz segun la altura de la pantalla (referencia 1080p)
-    private float Scale(float v) => v * Mathf.Max(0.6f, Screen.height / 1080f);
+    // (minimo 0.8 para que se lea en una vista Game pequeña)
+    private float Scale(float v) => v * Mathf.Max(0.8f, Screen.height / 1080f);
 
     private Rect Inset(Rect r) => new Rect(r.x + Scale(12), r.y, r.width - Scale(24), r.height);
 

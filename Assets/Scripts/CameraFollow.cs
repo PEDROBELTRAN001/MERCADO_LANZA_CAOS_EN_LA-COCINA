@@ -19,12 +19,15 @@ public class CameraFollow : MonoBehaviour
     public float zoomStep = 2f;
     public float minZoom = 6f;
     public float maxZoom = 70f;
+    [Tooltip("Zoom al empezar: 8 deja la cocina llenando la pantalla (12 se veia lejos)")]
+    public float startZoom = 8f;
 
     private Camera cam;
 
     private void Start()
     {
         cam = GetComponent<Camera>();
+        if (cam != null && cam.orthographic) cam.orthographicSize = Mathf.Clamp(startZoom, minZoom, maxZoom);
 
         // Si no se asignó un objetivo manualmente, buscar al jugador de forma automática
         if (target == null)

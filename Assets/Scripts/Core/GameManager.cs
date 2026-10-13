@@ -19,6 +19,10 @@ public class GameManager : MonoBehaviour
     private float gameTimer;
     private int currentScore;
 
+    // Resumen de la partida (se muestra en la pantalla final)
+    public int OrdersDelivered { get; private set; }
+    public int OrdersLost { get; private set; }
+
     private void Awake()
     {
         if (Instance == null)
@@ -69,6 +73,8 @@ public class GameManager : MonoBehaviour
     {
         gameTimer = gameDuration;
         currentScore = 0;
+        OrdersDelivered = 0;
+        OrdersLost = 0;
         OnGameStarted?.Invoke();
         Debug.Log("Juego iniciado! Tiempo: " + gameDuration);
     }
@@ -81,9 +87,13 @@ public class GameManager : MonoBehaviour
 
     public void AddScore(int points)
     {
-        currentScore += points;
+        // Las penalizaciones restan, pero el puntaje no baja de 0
+        currentScore = Mathf.Max(0, currentScore + points);
         Debug.Log("Puntuacion: " + currentScore);
     }
+
+    public void RegisterOrderDelivered() => OrdersDelivered++;
+    public void RegisterOrderLost() => OrdersLost++;
 
     public float GetTimeRemaining()
     {
