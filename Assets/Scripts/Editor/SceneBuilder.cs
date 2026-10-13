@@ -20,7 +20,7 @@ public class SceneBuilder : EditorWindow
         // Limpiar escena anterior
         GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
         System.Collections.Generic.List<GameObject> toDestroy = new System.Collections.Generic.List<GameObject>();
-        string[] prefixes = { "Wall_", "Floor_", "Counter_", "Stove", "Oven", "Prep", "Washing", "Plate", "Trash", "Stair", "Step_", "Mesa", "Serving", "Player", "GameManager", "OrderSystem", "SimpleInput", "Tomate", "Lechuga", "Pan", "Railing", "Prompt_" };
+        string[] prefixes = { "Wall_", "Floor_", "Counter_", "Stove", "Oven", "Prep", "Washing", "Plate", "Trash", "Stair", "Step_", "Mesa", "Serving", "Player", "GameManager", "OrderSystem", "SimpleInput", "Tomate", "Lechuga", "Pan", "Railing", "Prompt_", "Plato_", "Api_" };
 
         foreach (GameObject obj in allObjects)
         {
@@ -47,6 +47,8 @@ public class SceneBuilder : EditorWindow
         BuildFoodCourtFloor();
         BuildFoodCourtWalls();
         BuildFoodCourtTables();
+        DishMaterialSetup.SetupAll();
+        BuildFoodCourtDishes();
         BuildPlayer();
         SetupCamera();
         SetupGameManager();
@@ -73,6 +75,21 @@ public class SceneBuilder : EditorWindow
         mat.color = color;
         AssetDatabase.CreateAsset(mat, path);
         return mat;
+    }
+
+    static Material CreateURPMaterial(string name, Color color)
+    {
+        string path = "Assets/Materials/" + name + ".mat";
+        Material existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (existing != null) return existing;
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = Shader.Find("Standard");
+        Material mat = new Material(shader);
+        mat.name = name;
+        mat.color = color;
+        AssetDatabase.CreateAsset(mat, path);
+        return AssetDatabase.LoadAssetAtPath<Material>(path);
     }
 
     static GameObject CreatePrimitive(PrimitiveType type, string name, Vector3 position, Vector3 scale, Material mat)
@@ -375,5 +392,34 @@ public class SceneBuilder : EditorWindow
         recipe.requiresCooking = cook;
         recipe.basePoints = points;
         AssetDatabase.CreateAsset(recipe, path);
+    }
+
+    // ==================== PLATOS - COMIDA (modelos de Blender exportados como FBX) ====================
+    // Todos van sobre mostradores de la cocina; la superficie de los mostradores esta en y = 0.9
+    static void BuildFoodCourtDishes()
+    {
+        // Sobre Counter_N_1 (mostrador norte central) - Ficha FCH-GAS-006
+        PlaceDish("plato_pacenio.fbx", "Plato_PlatoPaceno_1", new Vector3(-9f, 0.92f, 5.3f));
+        // Sobre Counter_N_2 (mostrador norte derecho)
+        PlaceDish("ApiConPastel.fbx", "Plato_ApiConPastel_1", new Vector3(-6f, 0.92f, 5.3f));
+        // Sobre Counter_N_0 (mostrador norte izquierdo)
+        PlaceDish("SandwichDeChola.fbx", "Plato_SandwichDeChola_1", new Vector3(-12f, 0.92f, 5.3f));
+        // Sobre Counter_W_2 (mostrador oeste, arriba)
+        PlaceDish("EnsaladaDeFrutas.fbx", "Plato_EnsaladaDeFrutas_1", new Vector3(-14.3f, 0.92f, 3f));
+    }
+
+    static void PlaceDish(string fbxName, string objectName, Vector3 position)
+    {
+        string path = "Assets/Prefabs/" + fbxName;
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (prefab == null)
+        {
+            Debug.LogWarning("No se encontro " + path + " - no se pudo colocar " + objectName + ".");
+            return;
+        }
+
+        GameObject dish = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+        dish.name = objectName;
+        dish.transform.position = position;
     }
 }
