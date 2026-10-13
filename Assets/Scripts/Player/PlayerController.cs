@@ -70,12 +70,10 @@ public class PlayerController : MonoBehaviour
 
     private void ApplyMovementAndRotation()
     {
-        // 1. Aplicar rotación ultra rápida
+        // 1. Rotación instantánea (elimina por completo el efecto de semicircunferencia)
         if (moveDirection != Vector3.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            // Slerp con factor 30f fuerza un giro veloz y exacto sin derrapar
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, 30f * Time.fixedDeltaTime));
+            rb.MoveRotation(Quaternion.LookRotation(moveDirection));
         }
 
         // 2. Aplicar velocidad física recta

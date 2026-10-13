@@ -9497,7 +9497,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 5
-  rotationSpeed: 720
   interactionRange: 1.5
   interactableLayer:
     serializedVersion: 2
@@ -11517,7 +11516,7 @@ Transform:
   m_GameObject: {fileID: 1368609063}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 7.25, y: -1.5, z: 0}
+  m_LocalPosition: {x: 7.25, y: -2, z: 0}
   m_LocalScale: {x: 0.8, y: 1, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -14682,7 +14681,7 @@ Transform:
   m_GameObject: {fileID: 1747287907}
   serializedVersion: 2
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: -3.8302217, y: 9.427876, z: 6.6341395}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15230,7 +15229,7 @@ Transform:
   m_GameObject: {fileID: 1842363155}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 7.25, y: 0.049999952, z: 0}
+  m_LocalPosition: {x: 7.25, y: -0.70000005, z: 0}
   m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
   m_ConstrainProportionsScale: 0
   m_Children: []
