@@ -291,6 +291,14 @@ public class SceneBuilder : EditorWindow
     static void SetupCamera()
     {
         Camera mainCam = Camera.main;
+        if (mainCam == null)
+        {
+            // La escena se quedo sin camara: crear una en vez de fallar con NullReferenceException
+            GameObject camObj = new GameObject("Main Camera");
+            camObj.tag = "MainCamera";
+            mainCam = camObj.AddComponent<Camera>();
+            camObj.AddComponent<AudioListener>();
+        }
         mainCam.transform.position = new Vector3(0, 14, -12);
         mainCam.transform.rotation = Quaternion.Euler(50f, 0, 0);
         mainCam.orthographic = true;
@@ -396,16 +404,17 @@ public class SceneBuilder : EditorWindow
 
     // ==================== PLATOS - COMIDA (modelos de Blender exportados como FBX) ====================
     // Todos van sobre mostradores de la cocina; la superficie de los mostradores esta en y = 0.9
+    // Dos platos por mostrador del lado oeste (los del norte los reemplaza la cocina de Doña Rosa).
+    // Cada mostrador mide 2.5 de largo en Z; los platos (~0.65) van a +-0.6 del centro.
     static void BuildFoodCourtDishes()
     {
-        // Sobre Counter_N_1 (mostrador norte central) - Ficha FCH-GAS-006
-        PlaceDish("plato_pacenio.fbx", "Plato_PlatoPaceno_1", new Vector3(-9f, 0.92f, 5.3f));
-        // Sobre Counter_N_2 (mostrador norte derecho)
-        PlaceDish("ApiConPastel.fbx", "Plato_ApiConPastel_1", new Vector3(-6f, 0.92f, 5.3f));
-        // Sobre Counter_N_0 (mostrador norte izquierdo)
-        PlaceDish("SandwichDeChola.fbx", "Plato_SandwichDeChola_1", new Vector3(-12f, 0.92f, 5.3f));
-        // Sobre Counter_W_2 (mostrador oeste, arriba)
-        PlaceDish("EnsaladaDeFrutas.fbx", "Plato_EnsaladaDeFrutas_1", new Vector3(-14.3f, 0.92f, 3f));
+        // Counter_W_2 (oeste, arriba, z = 3)
+        PlaceDish("EnsaladaDeFrutas.fbx", "Plato_EnsaladaDeFrutas_1", new Vector3(-14.3f, 0.92f, 3.6f));
+        PlaceDish("ApiConPastel.fbx", "Plato_ApiConPastel_1", new Vector3(-14.3f, 0.92f, 2.4f));
+        // Counter_W_0 (oeste, abajo, z = -3) - Plato Paceño: Ficha FCH-GAS-006
+        // Counter_W_1 (al medio) queda libre: ahi esta el lavaplatos (WashingStation)
+        PlaceDish("plato_pacenio.fbx", "Plato_PlatoPaceno_1", new Vector3(-14.3f, 0.92f, -2.4f));
+        PlaceDish("SandwichDeChola.fbx", "Plato_SandwichDeChola_1", new Vector3(-14.3f, 0.92f, -3.6f));
     }
 
     static void PlaceDish(string fbxName, string objectName, Vector3 position)
