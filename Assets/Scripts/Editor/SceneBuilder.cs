@@ -18,13 +18,16 @@ public class SceneBuilder : EditorWindow
     public static void BuildContents()
     {
         // Limpiar escena anterior
-        GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         System.Collections.Generic.List<GameObject> toDestroy = new System.Collections.Generic.List<GameObject>();
         string[] prefixes = { "Wall_", "Floor_", "Counter_", "Stove", "Oven", "Prep", "Washing", "Plate", "Trash", "Stair", "Step_", "Mesa", "Serving", "Player", "GameManager", "OrderSystem", "SimpleInput", "Tomate", "Lechuga", "Pan", "Railing", "Prompt_", "Plato_", "Api_" };
 
         foreach (GameObject obj in allObjects)
         {
             if (obj == null) continue;
+            // Las copias hechas a mano ("Wall_K_W (3)", "Floor_Kitchen (1)") son parte del mapa del
+            // mercado de Pedro (paredes del perimetro y piso grande); el builder nunca crea nombres asi
+            if (obj.name.Contains(" (")) continue;
             foreach (string prefix in prefixes)
             {
                 if (obj.name.StartsWith(prefix))
