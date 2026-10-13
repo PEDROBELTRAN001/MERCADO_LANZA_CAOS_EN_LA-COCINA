@@ -20,7 +20,10 @@ public class StairTrigger : MonoBehaviour
         promptObj.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
 
         Renderer rend = promptObj.GetComponent<Renderer>();
-        Material mat = new Material(Shader.Find("Standard"));
+        // El proyecto usa URP: "Standard" se veria rosado
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) shader = Shader.Find("Standard");
+        Material mat = new Material(shader);
         mat.color = Color.yellow;
         mat.EnableKeyword("_EMISSION");
         mat.SetColor("_EmissionColor", Color.yellow * 0.4f);
