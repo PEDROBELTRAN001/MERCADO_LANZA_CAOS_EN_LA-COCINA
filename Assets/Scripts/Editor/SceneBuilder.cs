@@ -46,9 +46,8 @@ public class SceneBuilder : EditorWindow
         BuildKitchenWalls();
         BuildKitchenCounters();
         BuildCookingStations();
-        BuildStairs();
         BuildFoodCourtFloor();
-        BuildFoodCourtWalls();
+        BuildFoodCourtRailings();
         BuildFoodCourtTables();
         DishMaterialSetup.SetupAll();
         BuildFoodCourtDishes();
@@ -121,7 +120,10 @@ public class SceneBuilder : EditorWindow
         // Paredes cocina
         CreatePrimitive(PrimitiveType.Cube, "Wall_K_N", new Vector3(-9, h/2, 6), new Vector3(12, h, t), wallMat);
         CreatePrimitive(PrimitiveType.Cube, "Wall_K_S", new Vector3(-9, h/2, -6), new Vector3(12, h, t), wallMat);
-        CreatePrimitive(PrimitiveType.Cube, "Wall_K_E", new Vector3(-3, h/2, 0), new Vector3(t, h, 12), wallMat);
+        // Pared este partida en dos: deja una puerta hacia el comedor entre z = -3.9 y z = -1.3
+        // (libre de PlateStation y de la mesa de la sarten de Doña Rosa)
+        CreatePrimitive(PrimitiveType.Cube, "Wall_K_E_Norte", new Vector3(-3, h/2, 2.35f), new Vector3(t, h, 7.3f), wallMat);
+        CreatePrimitive(PrimitiveType.Cube, "Wall_K_E_Sur", new Vector3(-3, h/2, -4.95f), new Vector3(t, h, 2.1f), wallMat);
         CreatePrimitive(PrimitiveType.Cube, "Wall_K_W", new Vector3(-15, h/2, 0), new Vector3(t, h, 12), wallMat);
     }
 
@@ -173,67 +175,39 @@ public class SceneBuilder : EditorWindow
         t.AddComponent<TrashStation>();
     }
 
-    // ==================== ESCALERA ====================
-    static void BuildStairs()
-    {
-        Material stairMat = CreateMaterial("StairMaterial", new Color(0.55f, 0.47f, 0.39f));
-
-        // Zona subir - dentro de cocina, pegada a pared este
-        GameObject zoneUp = CreatePrimitive(PrimitiveType.Cube, "Stairs_Up", new Vector3(-4f, 1f, 0), new Vector3(2f, 2.5f, 3f), stairMat);
-        zoneUp.GetComponent<Renderer>().enabled = false;
-        var triggerUp = zoneUp.AddComponent<StairTrigger>();
-        triggerUp.teleportDestination = new Vector3(5f, 3.5f, 0f);
-        triggerUp.stairName = "Subir al Patio";
-        Collider colUp = zoneUp.GetComponent<Collider>();
-        if (colUp != null) colUp.isTrigger = true;
-
-        // Zona bajar - dentro de patio, pegada a pared oeste
-        GameObject zoneDown = CreatePrimitive(PrimitiveType.Cube, "Stairs_Down", new Vector3(5f, 3.5f, 0), new Vector3(2f, 2.5f, 3f), stairMat);
-        zoneDown.GetComponent<Renderer>().enabled = false;
-        var triggerDown = zoneDown.AddComponent<StairTrigger>();
-        triggerDown.teleportDestination = new Vector3(-4f, 1f, 0f);
-        triggerDown.stairName = "Bajar a Cocina";
-        Collider colDown = zoneDown.GetComponent<Collider>();
-        if (colDown != null) colDown.isTrigger = true;
-
-        // Barandales visuales
-        Material railMat = CreateMaterial("RailMaterial", new Color(0.45f, 0.37f, 0.29f));
-        CreatePrimitive(PrimitiveType.Cube, "Railing_Front", new Vector3(0.5f, 2.2f, -1.1f), new Vector3(8f, 0.15f, 0.15f), railMat);
-        CreatePrimitive(PrimitiveType.Cube, "Railing_Back", new Vector3(0.5f, 2.2f, 1.1f), new Vector3(8f, 0.15f, 0.15f), railMat);
-    }
-
-    // ==================== PLANTA ALTA - PATIO DE COMIDAS ====================
+    // ==================== PATIO DE COMIDAS (al lado de la cocina, mismo nivel) ====================
+    // Ocupa x = -3..9, z = -6..6, pegado a la pared este de la cocina. Sin paredes, como en un mercado;
+    // se entra caminando por la puerta de Wall_K_E. Ya no hay escalera ni teletransporte.
     static void BuildFoodCourtFloor()
     {
-        Material floorMat = CreateMaterial("UpperFloorMaterial", new Color(0.82f, 0.72f, 0.55f));
-        CreatePrimitive(PrimitiveType.Cube, "Floor_FoodCourt", new Vector3(9, 2.8f, 0), new Vector3(12, 0.1f, 12), floorMat);
+        // URP/Lit para que el piso reciba sombras (UpperFloorMaterial es Unlit)
+        Material floorMat = CreateURPMaterial("ComedorPisoMaterial", new Color(0.82f, 0.72f, 0.55f));
+        CreatePrimitive(PrimitiveType.Cube, "Floor_FoodCourt", new Vector3(3, 0, 0), new Vector3(12, 0.1f, 12), floorMat);
     }
 
-    static void BuildFoodCourtWalls()
+    static void BuildFoodCourtRailings()
     {
-        Material wallMat = CreateMaterial("WallMaterial_Upper", new Color(0.22f, 0.45f, 0.65f));
-        float h = 2.5f;
-        float t = 0.2f;
-        float y = 2.8f;
-
-        CreatePrimitive(PrimitiveType.Cube, "Wall_FC_N", new Vector3(9, y + h/2, 6), new Vector3(12, h, t), wallMat);
-        CreatePrimitive(PrimitiveType.Cube, "Wall_FC_S", new Vector3(9, y + h/2, -6), new Vector3(12, h, t), wallMat);
-        CreatePrimitive(PrimitiveType.Cube, "Wall_FC_E", new Vector3(15, y + h/2, 0), new Vector3(t, h, 12), wallMat);
-        CreatePrimitive(PrimitiveType.Cube, "Wall_FC_W", new Vector3(3, y + h/2, 0), new Vector3(t, h, 12), wallMat);
+        // El piso del mercado esta ~1.4 m mas abajo: baranda baja en los bordes abiertos para no caerse
+        Material railMat = CreateMaterial("RailMaterial", new Color(0.45f, 0.37f, 0.29f));
+        float h = 0.8f;
+        float t = 0.15f;
+        CreatePrimitive(PrimitiveType.Cube, "Railing_FC_N", new Vector3(3, h/2, 6), new Vector3(12, h, t), railMat);
+        CreatePrimitive(PrimitiveType.Cube, "Railing_FC_S", new Vector3(3, h/2, -6), new Vector3(12, h, t), railMat);
+        CreatePrimitive(PrimitiveType.Cube, "Railing_FC_E", new Vector3(9, h/2, 0), new Vector3(t, h, 12), railMat);
     }
 
     static void BuildFoodCourtTables()
     {
         Material tableMat = CreateMaterial("TableMaterial", new Color(0.55f, 0.47f, 0.39f));
-        float y = 3.25f;
+        float y = 0.45f;
 
-        // 6 mesas en cuadricula
+        // 6 mesas en cuadricula; la fila sur deja libre el paso que viene de la puerta (z ~ -2.6)
         for (int row = 0; row < 2; row++)
         {
             for (int col = 0; col < 3; col++)
             {
-                float x = 7f + col * 3f;
-                float z = -1.5f + row * 3f;
+                float x = 1.5f + col * 3f;
+                float z = -1f + row * 3.5f;
                 GameObject table = CreatePrimitive(PrimitiveType.Cube, "Mesa_" + (row*3+col+1), new Vector3(x, y, z), new Vector3(2f, 0.9f, 1.5f), tableMat);
                 table.AddComponent<FoodCourtTable>();
             }
@@ -241,7 +215,7 @@ public class SceneBuilder : EditorWindow
 
         // Mostrador de servicio
         Material serveMat = CreateMaterial("ServeMaterial", new Color(0.7f, 0.7f, 0.7f));
-        GameObject serving = CreatePrimitive(PrimitiveType.Cube, "ServingWindow", new Vector3(9, 3.4f, 5.3f), new Vector3(5f, 1.1f, 1.2f), serveMat);
+        GameObject serving = CreatePrimitive(PrimitiveType.Cube, "ServingWindow", new Vector3(3, 0.55f, 5.3f), new Vector3(5f, 1.1f, 1.2f), serveMat);
         serving.AddComponent<ServingWindow>();
     }
 
