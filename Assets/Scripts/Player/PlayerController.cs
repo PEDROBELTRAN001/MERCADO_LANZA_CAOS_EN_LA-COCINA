@@ -4,7 +4,6 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 5f;
-    // Eliminamos la variable rotationSpeed para forzar la rotación ágil por código
 
     [Header("Interaction")]
     public float interactionRange = 1.5f;
@@ -13,6 +12,9 @@ public class PlayerController : MonoBehaviour
     private Vector3 moveDirection;
     private Rigidbody rb;
     private Interactable currentInteractable;
+
+    // Referencia al Animator
+    private Animator animator;
 
     // Lo que el jugador tiene enfrente (lo usa el HUD para mostrar "E · ...")
     public Interactable CurrentInteractable => currentInteractable;
@@ -27,6 +29,9 @@ public class PlayerController : MonoBehaviour
             rb.useGravity = true;
         }
 
+        // Busca el Animator en este objeto o en su hijo Camarero_color
+        animator = GetComponentInChildren<Animator>();
+
         if (SimpleInput.Instance == null)
         {
             GameObject inputObj = new GameObject("SimpleInput");
@@ -37,6 +42,7 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         CalculateMoveDirection();
+        UpdateAnimation(); // Actualiza la animación según el movimiento
         DetectInteractable();
 
         if (SimpleInput.Instance != null && SimpleInput.Instance.InteractPressed)
@@ -71,9 +77,19 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void UpdateAnimation()
+    {
+        if (animator != null)
+        {
+            // Si hay dirección de movimiento, isWalking será true
+            bool isMoving = moveDirection != Vector3.zero;
+            animator.SetBool("isWalking", isMoving);
+        }
+    }
+
     private void ApplyMovementAndRotation()
     {
-        // 1. Rotación instantánea (elimina por completo el efecto de semicircunferencia)
+        // 1. Rotación instantánea
         if (moveDirection != Vector3.zero)
         {
             rb.MoveRotation(Quaternion.LookRotation(moveDirection));
@@ -87,8 +103,6 @@ public class PlayerController : MonoBehaviour
 
     private void DetectInteractable()
     {
-        // Esfera delante del jugador: detecta estaciones de cualquier altura (un rayo a la altura del
-        // pecho pasaba por encima de mostradores y mesas de 0.9 m). Gana la mas cercana al centro.
         float radius = interactionRange * 0.6f;
         Vector3 center = transform.position + transform.forward * radius;
         Collider[] hits = Physics.OverlapSphere(center, radius, interactableLayer, QueryTriggerInteraction.Collide);
