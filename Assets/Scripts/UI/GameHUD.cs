@@ -53,6 +53,8 @@ public class GameHUD : MonoBehaviour
     private void Update()
     {
         if (GameManager.Instance == null || Keyboard.current == null) return;
+        // Mientras hay una ventana flotante abierta (historia, fichas...) ENTER es para ella
+        if (FloatingWindows.BlocksInput) return;
 
         var state = GameManager.Instance.CurrentState;
         bool enter = Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame;
@@ -77,9 +79,11 @@ public class GameHUD : MonoBehaviour
         switch (GameManager.Instance.CurrentState)
         {
             case GameManager.GameState.Ready:
+                if (FloatingWindows.IsOpen) break;
                 DrawCenterPanel("MERCADO LANZA: CAOS EN LA COCINA",
                     "Atiende los pedidos de las mesas antes de que se acabe el tiempo.\n\n" +
-                    "WASD: moverse    E: interactuar    Rueda del mouse: zoom\n\n" +
+                    "WASD: moverse    E: interactuar    Rueda del mouse: zoom\n" +
+                    "F1: fichas de personaje    F2: currículum de Tomás    F3: historia\n\n" +
                     "Presiona ENTER para empezar");
                 break;
 
