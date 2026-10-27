@@ -441,8 +441,10 @@ public class FloatingWindows : MonoBehaviour
 
     private void DrawToasts()
     {
-        float w = Mathf.Min(Scale(430), Screen.width * 0.45f);
-        float y = Scale(16);
+        // Separados del borde para que no queden pegados a la esquina de la pantalla
+        float margin = Scale(32);
+        float w = Mathf.Min(Scale(400), Screen.width * 0.36f);
+        float y = Scale(84);
         float now = Time.time;
 
         foreach (Toast t in toasts)
@@ -454,7 +456,7 @@ public class FloatingWindows : MonoBehaviour
             float slide = Mathf.Clamp01((now - t.start) / 0.35f);
             slide = 1f - Mathf.Pow(1f - slide, 3f);
             float alpha = Mathf.Clamp01((t.end - now) / 0.5f);
-            float x = Screen.width - Scale(16) - w + (1f - slide) * (w + Scale(32));
+            float x = Screen.width - margin - w + (1f - slide) * (w + margin * 2f);
 
             DrawToast(t, new Rect(x, y, w, h), alpha);
             y += h + Scale(10);
@@ -466,10 +468,13 @@ public class FloatingWindows : MonoBehaviour
 
     private float ToastHeight(Toast t, float w)
     {
-        float h = Scale(42) + toastBody.CalcHeight(new GUIContent(t.body), ToastTextWidth(w)) + Scale(12);
+        float tw = ToastTextWidth(w);
+        float h = Scale(14) + TitleHeight(t, tw) + toastBody.CalcHeight(new GUIContent(t.body), tw) + Scale(16);
         if (t.kind == Kind.Explore) h += landmarks.Count * Scale(24) + Scale(4);
         return Mathf.Max(Scale(64), h);
     }
+
+    private float TitleHeight(Toast t, float tw) => Mathf.Max(Scale(28), toastTitle.CalcHeight(new GUIContent(t.title), tw));
 
     private void DrawToast(Toast t, Rect r, float alpha)
     {
@@ -495,9 +500,10 @@ public class FloatingWindows : MonoBehaviour
 
         float tx = icon.xMax + Scale(12), tw = ToastTextWidth(r.width);
         toastTitle.normal.textColor = tone;
-        GUI.Label(new Rect(tx, r.y + Scale(10), tw, Scale(28)), t.title, toastTitle);
+        float th = TitleHeight(t, tw);
+        GUI.Label(new Rect(tx, r.y + Scale(12), tw, th), t.title, toastTitle);
 
-        float by = r.y + Scale(42);
+        float by = r.y + Scale(14) + th;
         float bh = toastBody.CalcHeight(new GUIContent(t.body), tw);
         GUI.Label(new Rect(tx, by, tw, bh), t.body, toastBody);
         by += bh + Scale(4);
@@ -788,7 +794,8 @@ public class FloatingWindows : MonoBehaviour
         bigTitle.normal.textColor = accentColor;
         center = new GUIStyle(body) { alignment = TextAnchor.MiddleCenter, wordWrap = false };
         initialStyle = new GUIStyle(center) { fontSize = Mathf.RoundToInt(size * 2.6f), fontStyle = FontStyle.Bold };
-        toastTitle = new GUIStyle(body) { fontSize = Mathf.RoundToInt(size * 0.85f), fontStyle = FontStyle.Bold, wordWrap = false, clipping = TextClipping.Clip };
+        // El titulo se parte en dos lineas si no entra (antes se cortaba)
+        toastTitle = new GUIStyle(body) { fontSize = Mathf.RoundToInt(size * 0.85f), fontStyle = FontStyle.Bold };
         toastBody = new GUIStyle(body) { fontSize = Mathf.RoundToInt(size * 0.8f) };
         iconStyle = new GUIStyle(center) { fontSize = Mathf.RoundToInt(size * 1.1f), fontStyle = FontStyle.Bold };
 
