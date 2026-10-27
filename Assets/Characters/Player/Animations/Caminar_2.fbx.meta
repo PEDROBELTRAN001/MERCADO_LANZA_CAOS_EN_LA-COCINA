@@ -1,0 +1,220 @@
+fileFormatVersion: 2
+guid: 6e206f16b58c96b48b00b5f753ef959e
+ModelImporter:
+  serializedVersion: 24600
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: mixamo.com
+      takeName: mixamo.com
+      internalID: -203655887218126122
+      firstFrame: 0
+      lastFrame: 48
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton:
+    - name: Camarero_color(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Cube
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0.40418628, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 35.552525, y: 33.696953, z: 33.763634}
+    - name: Cube.001
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0, z: -9.313226e-10}
+      rotation: {x: -0.6976211, y: 0.0001315726, z: 0.0000000034230254, w: 0.7164669}
+      scale: {x: 35.55252, y: 33.69695, z: 33.763634}
+    - name: Cube.002
+      parentName: Camarero_color(Clone)
+      position: {x: -0.181455, y: 1.0538594, z: -0.11169631}
+      rotation: {x: -0.83568, y: -0.00091412675, z: -0.0013909279, w: 0.54921424}
+      scale: {x: 0.4553242, y: 1.3092853, z: 1.3092853}
+    - name: Cube.003
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0.40418628, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 35.552525, y: 33.696953, z: 33.763634}
+    - name: Cube.004
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0.40418628, z: 0.0104997475}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 35.552525, y: 33.696953, z: 33.763634}
+    - name: Cube.005
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0.40418628, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 35.552525, y: 33.696953, z: 33.763634}
+    - name: Cube.007
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0.39735138, z: 0.011510058}
+      rotation: {x: -0.7116738, y: 0, z: 0, w: 0.70251006}
+      scale: {x: 29.766628, y: 29.670929, z: 33.763634}
+    - name: Empty
+      parentName: Camarero_color(Clone)
+      position: {x: -2.1580606, y: 0.06959222, z: 0}
+      rotation: {x: 0.000000081460335, y: 0, z: -0, w: 1}
+      scale: {x: 100, y: 100, z: 100}
+    - name: Empty.001
+      parentName: Camarero_color(Clone)
+      position: {x: 0.008924007, y: 0.06959222, z: 0.06836612}
+      rotation: {x: 0.000000057601174, y: -0.70710677, z: 0.00000005760117, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: Empty.002
+      parentName: Camarero_color(Clone)
+      position: {x: -1.6710205, y: 0.06481848, z: 0}
+      rotation: {x: 0.000000081460335, y: 0, z: -0, w: 1}
+      scale: {x: 100, y: 100, z: 100}
+    - name: Empty.003
+      parentName: Camarero_color(Clone)
+      position: {x: -0.0070865154, y: 0.071682744, z: -0.7398996}
+      rotation: {x: 0.000000057601174, y: -0.70710677, z: 0.00000005760117, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: Empty.004
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.01396226, y: -0.0011797594, z: -0.000016418195, w: 0.99990183}
+      scale: {x: 99.99999, y: 100, z: 99.99999}
+    - name: Empty.005
+      parentName: Camarero_color(Clone)
+      position: {x: 0.057715893, y: 0.06959222, z: -0.75189465}
+      rotation: {x: -0.70710665, y: 0, z: -0, w: 0.7071069}
+      scale: {x: 100, y: 100, z: 100}
+    - name: Plane.002
+      parentName: Camarero_color(Clone)
+      position: {x: -0, y: 0.74683106, z: 0.20579924}
+      rotation: {x: 0.3493537, y: 0, z: -0, w: 0.9369909}
+      scale: {x: 0.8915113, y: 0.59110975, z: 0.72577703}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 1
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 6d64110ac1ba0264487f6aae3e13e018, type: 3}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 2
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
