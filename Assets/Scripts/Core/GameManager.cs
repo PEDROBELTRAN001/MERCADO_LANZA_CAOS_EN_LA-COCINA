@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
 
     private float gameTimer;
     private int currentScore;
+    public bool WonByExpulsions { get; private set; }
 
     // Resumen de la partida (se muestra en la pantalla final)
     public int OrdersDelivered { get; private set; }
@@ -57,13 +58,14 @@ public class GameManager : MonoBehaviour
 
     public void SetState(GameState newState)
     {
+        GameState previousState = CurrentState;
         CurrentState = newState;
         OnGameStateChanged?.Invoke(newState);
 
         switch (newState)
         {
             case GameState.Playing:
-                StartGame();
+                if (previousState != GameState.Paused) StartGame();
                 break;
             case GameState.GameOver:
                 OnGameOver?.Invoke();
@@ -73,6 +75,7 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
+        WonByExpulsions = false;
         gameTimer = gameDuration;
         currentScore = 0;
         OrdersDelivered = 0;
@@ -96,6 +99,20 @@ public class GameManager : MonoBehaviour
         else PointsLost += -points;
         currentScore = Mathf.Max(0, currentScore + points);
         Debug.Log("Puntuacion: " + currentScore);
+    }
+
+    public void DeductTime(float seconds)
+    {
+        if (CurrentState != GameState.Playing) return;
+        gameTimer = Mathf.Max(0f, gameTimer - Mathf.Max(0f, seconds));
+        if (gameTimer <= 0f) GameOver();
+    }
+
+    public void WinByExpulsions()
+    {
+        if (CurrentState != GameState.Playing) return;
+        WonByExpulsions = true;
+        SetState(GameState.GameOver);
     }
 
     public void RegisterOrderDelivered() => OrdersDelivered++;

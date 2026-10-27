@@ -14,17 +14,19 @@ public class CameraZoomTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        PlayerController player = other.GetComponentInParent<PlayerController>();
+        if (player != null && player.viewCamera != null)
         {
-            CameraFollow.Instance.SetContextView(closeZoom, frontalAngleX, closeOffset);
+            player.viewCamera.GetComponent<CameraFollow>()?.SetContextView(closeZoom, frontalAngleX, closeOffset);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
+        PlayerController player = other.GetComponentInParent<PlayerController>();
+        if (player != null && player.viewCamera != null)
         {
-            CameraFollow.Instance.ResetToDefaultView();
+            player.viewCamera.GetComponent<CameraFollow>()?.ResetToDefaultView();
         }
     }
 }

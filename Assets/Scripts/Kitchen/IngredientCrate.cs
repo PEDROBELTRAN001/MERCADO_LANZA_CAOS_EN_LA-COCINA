@@ -13,6 +13,18 @@ public class IngredientCrate : Interactable
     public PrimitiveType shape = PrimitiveType.Sphere;
     public Vector3 size = new Vector3(0.25f, 0.25f, 0.25f);
 
+    private void Start()
+    {
+        Transform oldExample = transform.Find("Muestra");
+        if (oldExample != null) oldExample.gameObject.SetActive(false);
+        GameObject example = FoodModelLibrary.CreateIngredient(ingredientType, FoodModelFactory.Preparation.Raw);
+        example.name = "Muestra 3D del ingrediente";
+        example.transform.SetParent(transform, true);
+        Collider body = GetComponent<Collider>();
+        float top = body != null ? body.bounds.max.y : transform.position.y;
+        example.transform.position = new Vector3(transform.position.x, top + 0.025f, transform.position.z);
+    }
+
     public override void Interact(PlayerController player)
     {
         base.Interact(player);
@@ -28,6 +40,7 @@ public class IngredientCrate : Interactable
             if (heldIngredient != null && heldIngredient.ingredientType == ingredientType &&
                 !heldIngredient.isCooked && !heldIngredient.isChopped)
             {
+                player.ReleaseHeldItem();
                 Destroy(held);
                 GameHUD.Notify("Devolviste " + ingredientName.ToLower() + " a su caja");
                 return;
@@ -37,20 +50,13 @@ public class IngredientCrate : Interactable
             return;
         }
 
-        GameObject item = GameObject.CreatePrimitive(shape);
-        // Lo que se lleva en la mano no debe chocar con el jugador ni tapar la deteccion de estaciones
-        Destroy(item.GetComponent<Collider>());
-        item.name = ingredientName;
-        item.transform.SetParent(hand, false);
-        item.transform.localPosition = Vector3.zero;
-        item.transform.localScale = size;
-
-        Renderer rend = item.GetComponent<Renderer>();
-        if (rend != null) rend.material.color = color;
+        GameObject item = new GameObject(ingredientName);
+        item.AddComponent<FoodVisual>().Refresh(ingredientType, false, false);
 
         Ingredient ingredient = item.AddComponent<Ingredient>();
         ingredient.ingredientName = ingredientName;
         ingredient.ingredientType = ingredientType;
         ingredient.femenino = femenino;
+        if (!player.TryHoldItem(item)) Destroy(item);
     }
 }

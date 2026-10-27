@@ -15,9 +15,9 @@ public class PlateStation : KitchenCounter
 
     public override void Interact(PlayerController player)
     {
-        base.Interact(player);
+        if (player.HeldItem != null) { GameHUD.Notify("Necesitas la mano vacía para tomar un plato."); return; }
 
-        if (!isOccupied && availablePlates > 0)
+        if (availablePlates > 0)
         {
             SpawnPlate(player);
         }
@@ -32,8 +32,7 @@ public class PlateStation : KitchenCounter
         }
 
         GameObject plate = Instantiate(platePrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
-        plate.transform.SetParent(player.transform);
-        plate.transform.localPosition = Vector3.up * 1.5f;
+        if (!player.TryHoldItem(plate)) { Destroy(plate); return; }
 
         availablePlates--;
         Debug.Log("Plato dispensado. Platos restantes: " + availablePlates);

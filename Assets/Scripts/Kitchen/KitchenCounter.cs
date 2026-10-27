@@ -34,8 +34,7 @@ public class KitchenCounter : Interactable
                 GameHUD.Notify(DisplayName + " ya tiene: " + storedItem.name + ". Recógelo primero con la mano vacía", 3.5f);
                 return;
             }
-            storedItem.transform.SetParent(hand, false);
-            storedItem.transform.localPosition = Vector3.zero;
+            if (!player.TryHoldItem(storedItem)) return;
             isOccupied = false;
             Debug.Log("Recogido: " + storedItem.name);
             storedItem = null;
@@ -47,7 +46,7 @@ public class KitchenCounter : Interactable
         Transform playerHand = player.transform.Find("Hand");
         if (playerHand != null && playerHand.childCount > 0)
         {
-            Transform item = playerHand.GetChild(0);
+            Transform item = player.ReleaseHeldItem().transform;
             if (itemSlot != null)
             {
                 item.SetParent(itemSlot);

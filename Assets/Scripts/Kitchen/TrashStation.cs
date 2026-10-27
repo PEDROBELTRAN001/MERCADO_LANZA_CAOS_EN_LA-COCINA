@@ -20,6 +20,7 @@ public class TrashStation : Interactable
 
         GameObject item = hand.GetChild(0).gameObject;
         Debug.Log("Tirando: " + item.name);
+        player.ReleaseHeldItem();
         Destroy(item);
     }
 }

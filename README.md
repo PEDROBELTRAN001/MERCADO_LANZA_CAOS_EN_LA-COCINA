@@ -1,3 +1,36 @@
+# Mercado Lanza: Caos en la Cocina
+
+## Versión jugable de la rama Douglas
+
+Proyecto actualizado con modo individual (Rival automático), multijugador local, tacle de sabotaje, investigación y policía, modelos 3D de ingredientes/platos y cinco apariencias basadas en las fichas del primer entregable. Las fotos del currículum, las fichas y el selector se incluyen como recursos del juego.
+
+### Abrir y jugar
+
+1. Clonar esta rama con Git LFS instalado y ejecutar `git lfs pull`.
+2. Agregar esta carpeta en Unity Hub y abrir con Unity 6000.6.0f1. Esperar a que termine la importación.
+3. Abrir `Assets/Scenes/KitchenScene.unity` y pulsar Play.
+4. Avanzar la introducción o saltarla con Esc. Elegir modo y apariencia antes de comenzar.
+
+| Participante | Movimiento | Interacción | Tacle |
+|---|---|---|---|
+| Tomás / jugador 1 | WASD | E | — |
+| Rival / jugador 2 local | IJKL | O | U |
+
+En modo individual, el Rival se controla automáticamente. F4 abre el recetario y pausa el turno. F1 muestra las fichas, F2 el currículum y F3 la historia.
+
+### Guías y verificación
+
+- [Modos, ingredientes y apariencias](Documentation/MENU_MODELOS_Y_SKINS.md)
+- [Modelos del PDF y fotos de los personajes](Documentation/PERSONAJES_PDF_Y_RETRATOS.md)
+- [Sabotaje local](Documentation/SABOTAJE_LOCAL.md)
+- [Policía e investigación](Documentation/CAPIBARA_E_INVESTIGACION.md)
+- [Resultados de las pruebas de Unity](Documentation/PRUEBAS_PERSONAJES.md)
+- [Vistas de los personajes](Documentation/Visuals/PersonajesPDF.png)
+
+Validación en Unity: 255 comprobaciones de personajes, 25 de retratos y pantallas, 88 de menú/IA y 104 de cocina, multijugador, sabotaje e investigación. Las guías detallan el alcance implementado y los comportamientos todavía pendientes.
+
+---
+
 # MercadoGame - Unity 6.6
 
 Juego estilo Overcooked ambientado en un mercado con cocina (planta baja) y patio de comidas (planta alta).

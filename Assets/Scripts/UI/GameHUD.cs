@@ -14,7 +14,6 @@ public class GameHUD : MonoBehaviour
     [Tooltip("Segundos restantes a partir de los cuales un pedido se marca como urgente")]
     public float urgentSeconds = 10f;
 
-    private PlayerController player;
     private GUIStyle textStyle, titleStyle, centerStyle;
     private Texture2D panelTexture;
 
@@ -54,7 +53,7 @@ public class GameHUD : MonoBehaviour
     {
         if (GameManager.Instance == null || Keyboard.current == null) return;
         // Mientras hay una ventana flotante abierta (historia, fichas...) ENTER es para ella
-        if (FloatingWindows.BlocksInput) return;
+        if (FloatingWindows.BlocksInput || GameFrontEnd.BlocksInput) return;
 
         var state = GameManager.Instance.CurrentState;
         bool enter = Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame;
@@ -62,7 +61,8 @@ public class GameHUD : MonoBehaviour
         if (state == GameManager.GameState.Ready && enter)
         {
             ClearNotice();
-            GameManager.Instance.SetState(GameManager.GameState.Playing);
+            if (GameFrontEnd.Instance != null) GameFrontEnd.Instance.StartSelectedGame();
+            else GameManager.Instance.SetState(GameManager.GameState.Playing);
         }
         else if (state == GameManager.GameState.GameOver && Keyboard.current.rKey.wasPressedThisFrame)
         {
@@ -80,9 +80,11 @@ public class GameHUD : MonoBehaviour
         {
             case GameManager.GameState.Ready:
                 if (FloatingWindows.IsOpen) break;
+                if (GameFrontEnd.Instance != null) { GameFrontEnd.Instance.DrawReady(); break; }
                 DrawCenterPanel("MERCADO LANZA: CAOS EN LA COCINA",
                     "Atiende los pedidos de las mesas antes de que se acabe el tiempo.\n\n" +
-                    "WASD: moverse    E: interactuar    Rueda del mouse: zoom\n" +
+                    "Tomás: WASD + E    |    Rival: IJKL + O    |    U: tacle\n" +
+                    "E sobre los restos: investigar. E junto al Capibara: denunciar.\n" +
                     "F1: fichas de personaje    F2: currículum de Tomás    F3: historia\n\n" +
                     "Presiona ENTER para empezar");
                 break;
@@ -92,19 +94,23 @@ public class GameHUD : MonoBehaviour
                 DrawOrders();
                 DrawInteraction();
                 DrawNotice();
+                if (!FloatingWindows.IsOpen && !GameFrontEnd.GuideVisible && GUI.Button(new Rect(Screen.width - Scale(180), Scale(16), Scale(164), Scale(42)), "Recetario · F4"))
+                    GameFrontEnd.Instance?.ToggleGuide();
                 break;
 
             case GameManager.GameState.GameOver:
-                DrawCenterPanel("¡SE ACABÓ EL TIEMPO!",
+                DrawCenterPanel(GameManager.Instance.WonByExpulsions ? "¡GANARON LOS TRABAJADORES!" : "¡SE ACABÓ EL TIEMPO!",
                     "Puntos: " + GameManager.Instance.GetCurrentScore() +
                     "   (meta: " + GameManager.Instance.targetScore + ")\n" +
                     "Ganados: +" + GameManager.Instance.PointsEarned +
                     "   ·   Penalizaciones: -" + GameManager.Instance.PointsLost + "\n" +
                     "Pedidos entregados: " + GameManager.Instance.OrdersDelivered +
                     "   ·   Clientes que se fueron sin comer: " + GameManager.Instance.OrdersLost + "\n\n" +
-                    (GameManager.Instance.GetCurrentScore() >= GameManager.Instance.targetScore
+                    (GameManager.Instance.WonByExpulsions ? "El Capibara expulsó al Rival por tercera vez." : GameManager.Instance.GetCurrentScore() >= GameManager.Instance.targetScore
                         ? "¡Doña Rosa está orgullosa!" : "Los caseros se fueron con hambre...") +
                     "\n\nPresiona R para jugar otra vez");
+                if (GUI.Button(new Rect((Screen.width - Scale(260)) / 2f, Screen.height / 2f + Scale(185), Scale(260), Scale(44)), "Volver al menú"))
+                    GameFrontEnd.Instance?.ReturnToMenu();
                 break;
         }
     }
@@ -165,26 +171,40 @@ public class GameHUD : MonoBehaviour
 
     private void DrawInteraction()
     {
-        if (player == null) player = FindAnyObjectByType<PlayerController>();
-        if (player == null) return;
-
-        string text = "";
-        Transform hand = player.transform.Find("Hand");
-        if (hand != null && hand.childCount > 0)
-            text = "En la mano: " + hand.GetChild(0).name;
-
-        Interactable target = player.CurrentInteractable;
-        if (target != null)
+        LocalMultiplayer local = LocalMultiplayer.Instance;
+        if (local == null) return;
+        bool multiplayer = local.Mode == LocalMultiplayer.GameMode.LocalMultiplayer;
+        float width = multiplayer ? Screen.width * 0.5f : Screen.width;
+        DrawPlayerInteraction(local.Worker, 0f, "TOMÁS · WASD / E", width);
+        if (multiplayer)
         {
-            string action = string.IsNullOrEmpty(target.interactionPrompt) ? "E" : target.interactionPrompt;
-            text += (text.Length > 0 ? "      " : "") + action + "  →  " + target.DisplayName;
+            DrawPlayerInteraction(local.Rival, Screen.width * 0.5f, "J2 · IJKL / O · U: TACLE", width);
+            GUI.Box(new Rect(Screen.width * 0.5f - 1f, 0f, 2f, Screen.height), GUIContent.none);
         }
-        if (text.Length == 0) return;
+    }
 
-        float w = Scale(640), h = Scale(44);
-        Rect r = new Rect((Screen.width - w) / 2f, Screen.height - h - Scale(16), w, h);
-        GUI.DrawTexture(r, panelTexture);
-        GUI.Label(r, text, centerStyle);
+    private void DrawPlayerInteraction(PlayerController character, float left, string label, float viewportWidth)
+    {
+        if (character == null) return;
+        string text = character.HeldItem != null ? "En la mano: " + character.HeldItem.name : "Mano vacía";
+        if (character.CurrentInteractable != null)
+            text += "\n" + character.InteractionKey + ": " + character.CurrentInteractable.DisplayName;
+        if (character.IsDetained)
+        {
+            float seconds = InvestigationSystem.Instance != null ? InvestigationSystem.Instance.ReturnSeconds : 0f;
+            text = seconds > 0f ? "Fuera del mercado. Regresas en " + Mathf.CeilToInt(seconds) + " s" : "Fuera del mercado";
+        }
+        if (character.IsStunned) text += "\n¡Golpe recibido!";
+        TackleSabotage attack = character.GetComponent<TackleSabotage>();
+        if (attack != null && !character.IsDetained)
+            text += attack.IsPreparing ? "\n¡Preparando tacle!" : attack.CooldownRemaining > 0f
+                ? "\nTacle disponible en " + Mathf.CeilToInt(attack.CooldownRemaining) + " s" : "\nU: preparar tacle";
+        float width = Mathf.Min(viewportWidth - Scale(24), Scale(900));
+        left += (viewportWidth - width - Scale(24)) / 2f;
+        Rect area = new Rect(left + Scale(12), Screen.height - Scale(130), width, Scale(114));
+        GUI.DrawTexture(area, panelTexture);
+        GUI.Label(new Rect(area.x, area.y, area.width, Scale(30)), label, centerStyle);
+        GUI.Label(new Rect(area.x, area.y + Scale(28), area.width, area.height - Scale(30)), text, centerStyle);
     }
 
     private void DrawNotice()
@@ -192,7 +212,7 @@ public class GameHUD : MonoBehaviour
         if (string.IsNullOrEmpty(notice) || Time.time > noticeUntil) return;
 
         float w = Scale(640), h = Scale(44);
-        Rect r = new Rect((Screen.width - w) / 2f, Screen.height - h * 2 - Scale(24), w, h);
+        Rect r = new Rect((Screen.width - w) / 2f, Screen.height - Scale(195), w, h);
         GUI.DrawTexture(r, panelTexture);
         centerStyle.normal.textColor = noticeIsWarning ? urgentColor : accentColor;
         GUI.Label(r, notice, centerStyle);

@@ -35,7 +35,7 @@ public class FloatingWindows : MonoBehaviour
     public float orderHurrySeconds = 10f;
 
     [Header("Sabotaje (simulado hasta que exista el impostor)")]
-    public bool simulateSabotage = true;
+    public bool simulateSabotage = false;
     public float sabotageMinInterval = 40f;
     public float sabotageMaxInterval = 70f;
 
@@ -108,14 +108,14 @@ public class FloatingWindows : MonoBehaviour
         new Character { name = "Doña Rosa", alias = "La Casera", role = "Dueña de la cocina", initial = "R",
             color = new Color(0.75f, 0.20f, 0.45f),
             about = "Cocinera legendaria del Mercado Lanza. Su plato paceño y su api con pastel tienen fila desde temprano. " +
-                    "Pollera, sombrero y una mirada a la que no se le escapa nada.",
+                    "Cofia, barbijo, mandil blanco y un aguayo de colores. No se le escapa ningún detalle.",
             statNames = new[] { "Sazón", "Carácter", "Paciencia" }, stats = new[] { 10, 9, 4 },
-            skill = "Sus recetas dan más puntos cuanto más rápido se entregan.",
-            weakness = "Si un cliente se va sin comer, se enoja (y te descuenta puntos)." },
+            skill = "Conoce los ingredientes y mantiene el puesto en marcha.",
+            weakness = "Le preocupa que un cliente se vaya sin comer." },
         new Character { name = "El Rival", alias = "El Impostor", role = "Saboteador infiltrado", initial = "?",
             color = new Color(0.35f, 0.20f, 0.45f),
             about = "Trabaja para un kiosko rival. Se viste con el uniforme de Doña Rosa para pasar desapercibido " +
-                    "y sabotear la cocina: humo en el fogón, aceite en el piso, platos cambiados.",
+                    "y hacer caer los ingredientes o platos que transportas con un tacle inesperado.",
             statNames = new[] { "Sigilo", "Astucia", "Cocina" }, stats = new[] { 9, 8, 2 },
             skill = "Se mezcla entre los trabajadores sin que nadie lo note.",
             weakness = "Su uniforme tiene un detalle que lo delata: hay que observar bien." },
@@ -126,6 +126,12 @@ public class FloatingWindows : MonoBehaviour
             statNames = new[] { "Olfato", "Calma", "Rapidez" }, stats = new[] { 8, 10, 2 },
             skill = "Expulsa al impostor cuando se confirman tres pistas.",
             weakness = "Una acusación falsa te hace perder tiempo." },
+        new Character { name = "Cholita Paceña", alias = "La Comensal", role = "Clienta del mercado", initial = "Ch",
+            color = new Color(0.12f,0.51f,0.68f),
+            about = "Comensal paceña que visita el patio de comidas con su canasta. Lleva bombín café, mandil azul y una pollera de colores.",
+            statNames = new[] { "Buen gusto", "Alegría", "Paciencia" }, stats = new[] { 9,9,5 },
+            skill = "Conoce los sabores tradicionales del Mercado Lanza.",
+            weakness = "No le gusta esperar mientras su plato se enfría." },
     };
 
     private static readonly string[] SabotageClues =
@@ -186,6 +192,14 @@ public class FloatingWindows : MonoBehaviour
         instance.flashUntil = Time.time + 1.5f;
     }
 
+    public static void ShowTackleWarning(string playerName, float seconds)
+    {
+        if (instance == null) { GameHUD.Warn("¡Sabotaje! " + playerName + ", ¡esquiva el tacle!", seconds); return; }
+        instance.AddToast(Kind.Sabotage, "¡ADVERTENCIA DE SABOTAJE!",
+            playerName + ": alguien prepara un tacle. ¡Aléjate o deja la comida en una mesa!", seconds + 0.3f);
+        instance.flashUntil = Time.time + seconds;
+    }
+
     private void Awake()
     {
         instance = this;
@@ -196,6 +210,13 @@ public class FloatingWindows : MonoBehaviour
         if (GameManager.Instance != null) GameManager.Instance.OnGameStarted += OnGameStarted;
     }
 
+    private Vector2 curriculumScroll;
+    private void DrawCharacterPortrait(Rect area,int skin,string initial,Color color)
+    {
+        Texture picture=CharacterPortraitLibrary.Get(skin,true);
+        if(picture!=null){Color previous=GUI.color;GUI.color=Color.white;GUI.DrawTexture(area,picture,ScaleMode.ScaleToFit);GUI.color=previous;}
+        else{DrawCircle(area,color);GUI.Label(area,initial,initialStyle);}
+    }
     private void OnDestroy()
     {
         if (GameManager.Instance != null) GameManager.Instance.OnGameStarted -= OnGameStarted;
@@ -206,7 +227,7 @@ public class FloatingWindows : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance == null) return;
+        if (GameManager.Instance == null || GameFrontEnd.GuideVisible) return;
         var state = GameManager.Instance.CurrentState;
 
         if (showIntro && !introShown && state == GameManager.GameState.Ready)
@@ -371,6 +392,7 @@ public class FloatingWindows : MonoBehaviour
         if (exploreToast == null) return;
         if (exploreToast.closed || Time.time > exploreToast.end) { exploreToast = null; return; }
 
+        if (player == null && LocalMultiplayer.Instance != null) player = LocalMultiplayer.Instance.Worker;
         if (player == null) player = FindAnyObjectByType<PlayerController>();
         if (player == null) return;
 
@@ -621,25 +643,26 @@ public class FloatingWindows : MonoBehaviour
         Fill(sheet, paperColor);
 
         // Cabecera con foto, nombre y puesto
-        Rect head = new Rect(sheet.x, sheet.y, sheet.width, Scale(100));
+        Rect head = new Rect(sheet.x, sheet.y, sheet.width, Scale(112));
         Fill(head, new Color(0.18f, 0.40f, 0.34f));
-        Rect photo = new Rect(head.x + Scale(20), head.y + Scale(12), Scale(76), Scale(76));
+        Rect photo = new Rect(head.x + Scale(20), head.y + Scale(12), Scale(88), Scale(88));
         DrawCircle(Grow(photo, Scale(3)), paperColor);
-        DrawCircle(photo, Characters[0].color);
-        GUI.Label(photo, "T", initialStyle);
+        DrawCharacterPortrait(photo,0,"T",Characters[0].color);
 
-        GUI.Label(new Rect(photo.xMax + Scale(20), head.y + Scale(14), head.width, Scale(44)), "TOMÁS", bigTitle);
+        GUI.Label(new Rect(photo.xMax + Scale(20), head.y + Scale(14), head.width - photo.width - Scale(60), Scale(44)), "TOMÁS", bigTitle);
         body.normal.textColor = Color.white;
-        GUI.Label(new Rect(photo.xMax + Scale(22), head.y + Scale(58), head.width, Scale(30)), "Garzón · Cocina de Doña Rosa, Mercado Lanza", small);
+        GUI.Label(new Rect(photo.xMax + Scale(22), head.y + Scale(58), head.width - photo.width - Scale(64), Scale(30)), "Garzón · Cocina de Doña Rosa, Mercado Lanza", small);
         header.normal.textColor = accentColor;
         header.alignment = TextAnchor.UpperRight;
         GUI.Label(new Rect(head.x, head.y + Scale(16), head.width - Scale(20), Scale(30)), "CURRÍCULUM VITAE", header);
         header.alignment = TextAnchor.UpperLeft;
 
-        float top = head.yMax + Scale(14), height = sheet.yMax - top - Scale(8);
-        float leftW = sheet.width * 0.36f;
+        Rect viewport=new Rect(sheet.x+Scale(8),head.yMax+Scale(12),sheet.width-Scale(16),sheet.yMax-head.yMax-Scale(20));
+        float contentWidth=viewport.width-Scale(22),height=Mathf.Max(viewport.height,Scale(670)),top=0;
+        curriculumScroll=GUI.BeginScrollView(viewport,curriculumScroll,new Rect(0,0,contentWidth,height));
+        float leftW=contentWidth*.36f;
 
-        GUILayout.BeginArea(new Rect(sheet.x + Scale(20), top, leftW - Scale(30), height));
+        GUILayout.BeginArea(new Rect(Scale(10), top, leftW - Scale(24), height));
         GUILayout.Label("DATOS PERSONALES", paperHeader);
         GUILayout.Label("<b>Edad:</b> 22 años\n<b>Vive en:</b> Zona Max Paredes, La Paz\n<b>Puesto:</b> garzón y ayudante de cocina\n<b>Disponible:</b> desde las 6:00 a.m.", paperBody);
         GUILayout.Space(Scale(8));
@@ -650,9 +673,9 @@ public class FloatingWindows : MonoBehaviour
         GUILayout.Label("<b>Doña Rosa, la Casera</b>\n\"Es rápido y honrado. Si se le cae un plato, lo agarra antes de que toque el piso.\"", paperBody);
         GUILayout.EndArea();
 
-        Fill(new Rect(sheet.x + leftW, top, Scale(2), height), new Color(inkColor.r, inkColor.g, inkColor.b, 0.2f));
+        Fill(new Rect(leftW, top, Scale(2), height), new Color(inkColor.r, inkColor.g, inkColor.b, 0.2f));
 
-        GUILayout.BeginArea(new Rect(sheet.x + leftW + Scale(20), top, sheet.width - leftW - Scale(40), height));
+        GUILayout.BeginArea(new Rect(leftW + Scale(20), top, contentWidth - leftW - Scale(30), height));
         GUILayout.Label("PERFIL", paperHeader);
         GUILayout.Label("Joven paceño, rápido como minibús en bajada. Conoce cada pasillo del Mercado Lanza y a cada casera por su nombre. Nunca olvida un pedido.", paperBody);
         GUILayout.Space(Scale(8));
@@ -667,6 +690,7 @@ public class FloatingWindows : MonoBehaviour
         StatRow("Memoria de pedidos", 7, paperBody, new Color(0.18f, 0.40f, 0.34f), new Color(inkColor.r, inkColor.g, inkColor.b, 0.15f));
         StatRow("Olfato para pistas", 6, paperBody, new Color(0.18f, 0.40f, 0.34f), new Color(inkColor.r, inkColor.g, inkColor.b, 0.15f));
         GUILayout.EndArea();
+        GUI.EndScrollView();
     }
 
     private void DrawCard(Rect r)
@@ -681,8 +705,8 @@ public class FloatingWindows : MonoBehaviour
         float size = Mathf.Min(leftW - Scale(80), Scale(200));
         Rect photo = new Rect(side.x + (leftW - size) / 2f, side.y + Scale(36), size, size);
         DrawCircle(Grow(photo, Scale(5)), accentColor);
-        DrawCircle(photo, c.color);
-        GUI.Label(photo, c.initial, initialStyle);
+        int[] portraitSkins={0,2,1,4,3};
+        DrawCharacterPortrait(photo,portraitSkins[index],c.initial,c.color);
 
         float ty = photo.yMax + Scale(20);
         bigTitle.alignment = TextAnchor.UpperCenter;

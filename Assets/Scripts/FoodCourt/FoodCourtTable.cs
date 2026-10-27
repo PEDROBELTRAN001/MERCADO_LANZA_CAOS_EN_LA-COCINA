@@ -51,6 +51,7 @@ public class FoodCourtTable : Interactable
         }
 
         // Plato servido: queda sobre la mesa unos segundos (sin emparentar: el cubo escalado lo deformaria)
+        player.ReleaseHeldItem();
         servedDish = item;
         Collider body = GetComponent<Collider>();
         float top = body != null ? body.bounds.max.y : transform.position.y;

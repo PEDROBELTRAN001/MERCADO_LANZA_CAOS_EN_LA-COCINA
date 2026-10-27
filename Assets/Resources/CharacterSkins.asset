@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01e9ecc64f6466a0d290199f90b584b3, type: 3}
+  m_Name: CharacterSkins
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterSkinCatalog
+  tomas: {fileID: 4500204792575315465, guid: def36a27d59cab449bd438e510caf1cc, type: 3}
+  rival: {fileID: 6773372472031114173, guid: 2286c139e1a99d0965e7814068a6b647, type: 3}
+  donaRosa: {fileID: 9152228532505334784, guid: 0ebf35197cf05776ffde6ef0519b7a46, type: 3}
+  cholita: {fileID: 9042751939587619674, guid: 6af39a4a4ebd20ea98a12936f77d9968, type: 3}
+  capibara: {fileID: 4226133681442479635, guid: 468a8deec4cb49f081355442d5b59b3e, type: 3}
+  tomasAnimator: {fileID: 9100000, guid: c25fd825fd3953543960dd319b0dbdb4, type: 2}

@@ -1,15 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class StairTrigger : MonoBehaviour
 {
-    [Header("Teleport")]
     public Vector3 teleportDestination;
     public string stairName = "Escalera";
-
-    private bool playerInRange = false;
     private GameObject promptObj;
-
     private void Start()
     {
         // Prompt flotante
@@ -35,44 +31,30 @@ public class StairTrigger : MonoBehaviour
         promptObj.SetActive(false);
     }
 
+    private readonly HashSet<PlayerController> nearby = new HashSet<PlayerController>();
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            playerInRange = true;
-            if (promptObj != null) promptObj.SetActive(true);
-        }
+        var player = other.GetComponentInParent<PlayerController>();
+        if (player != null) { nearby.Add(player); if (promptObj != null) promptObj.SetActive(true); }
     }
-
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            playerInRange = false;
-            if (promptObj != null) promptObj.SetActive(false);
-        }
+        var player = other.GetComponentInParent<PlayerController>();
+        if (player != null) { nearby.Remove(player); if (promptObj != null) promptObj.SetActive(nearby.Count > 0); }
     }
-
+    public bool TryUseForAI(PlayerController player)
+    {
+        if (player == null || !player.usesAI || !PlayerController.GameplayActive || player.IsDetained || player.IsStunned) return false;
+        Collider entrance = GetComponent<Collider>();
+        if (entrance == null || Vector3.Distance(entrance.ClosestPoint(player.transform.position), player.transform.position) > 0.6f) return false;
+        player.Teleport(teleportDestination);
+        return true;
+    }
     private void Update()
     {
-        if (!playerInRange) return;
-
-        bool pressed = false;
-        if (Keyboard.current != null)
-            pressed = Keyboard.current.eKey.wasPressedThisFrame;
-
-        if (pressed)
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                PlayerController pc = player.GetComponent<PlayerController>();
-                if (pc != null)
-                {
-                    pc.Teleport(teleportDestination);
-                    Debug.Log(stairName + " -> Teletransportado!");
-                }
-            }
-        }
+        if (!PlayerController.GameplayActive) return;
+        foreach (var player in nearby)
+            if (player != null && !player.IsStunned && !player.IsDetained && player.InteractionPressed)
+                player.Teleport(teleportDestination);
     }
 }

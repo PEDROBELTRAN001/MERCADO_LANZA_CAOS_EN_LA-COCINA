@@ -40,6 +40,7 @@ public class Ingredient : MonoBehaviour
 
     public void UpdateVisual()
     {
+        GetComponent<FoodVisual>()?.Refresh(ingredientType, isChopped, isCooked);
         if (rawModel != null) rawModel.SetActive(!isChopped && !isCooked);
         if (choppedModel != null) choppedModel.SetActive(isChopped && !isCooked);
         if (cookedModel != null) cookedModel.SetActive(isCooked);
@@ -60,7 +61,7 @@ public class Ingredient : MonoBehaviour
     {
         if (isChopped) return;
         isChopped = true;
-        transform.localScale = Vector3.Scale(transform.localScale, new Vector3(1.25f, 0.5f, 1.25f));
+        if (GetComponent<FoodVisual>() == null) transform.localScale = Vector3.Scale(transform.localScale, new Vector3(1.25f, 0.5f, 1.25f));
         RefreshName();
         UpdateVisual();
     }

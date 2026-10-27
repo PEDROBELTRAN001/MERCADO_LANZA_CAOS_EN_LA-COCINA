@@ -19,8 +19,7 @@ public class WashingStation : Interactable
         {
             // Con la mano vacia el lavaplatos entrega un plato limpio para armar el pedido
             Plate clean = Plate.Create();
-            clean.transform.SetParent(hand, false);
-            clean.transform.localPosition = Vector3.zero;
+            if (!player.TryHoldItem(clean.gameObject)) { Destroy(clean.gameObject); return; }
             GameHUD.Notify("Plato limpio: llévalo a la mesa de armado");
             return;
         }

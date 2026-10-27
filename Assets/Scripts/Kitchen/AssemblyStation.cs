@@ -55,7 +55,7 @@ public class AssemblyStation : Interactable
 
         if (held == null)
         {
-            TakeBack(hand);
+            TakeBack(player);
             return;
         }
 
@@ -68,6 +68,12 @@ public class AssemblyStation : Interactable
         Plate heldPlate = held.GetComponent<Plate>();
         if (heldPlate != null)
         {
+            if (plate != null)
+            {
+                GameHUD.Notify("Ya hay un plato en la mesa de armado");
+                return;
+            }
+            player.ReleaseHeldItem();
             PlacePlate(heldPlate);
             return;
         }
@@ -75,7 +81,7 @@ public class AssemblyStation : Interactable
         Ingredient ingredient = held.GetComponent<Ingredient>();
         if (ingredient != null)
         {
-            AddIngredient(ingredient);
+            AddIngredient(ingredient, player);
             return;
         }
 
@@ -98,7 +104,7 @@ public class AssemblyStation : Interactable
         GameHUD.Notify("Plato listo para armar: trae los ingredientes del pedido");
     }
 
-    private void AddIngredient(Ingredient ingredient)
+    private void AddIngredient(Ingredient ingredient, PlayerController player)
     {
         if (plate == null)
         {
@@ -120,6 +126,7 @@ public class AssemblyStation : Interactable
             return;
         }
 
+        player.ReleaseHeldItem();
         plate.AddIngredient(ingredient);
         Transform t = ingredient.transform;
         t.SetParent(plate.transform, false);
@@ -129,7 +136,7 @@ public class AssemblyStation : Interactable
         TryCompleteDish();
     }
 
-    private void TakeBack(Transform hand)
+    private void TakeBack(PlayerController player)
     {
         Transform item = null;
         if (readyDish != null)
@@ -155,9 +162,7 @@ public class AssemblyStation : Interactable
             return;
         }
 
-        item.SetParent(hand, false);
-        item.localPosition = Vector3.zero;
-        item.localRotation = Quaternion.identity;
+        player.TryHoldItem(item.gameObject);
     }
 
     private void TryCompleteDish()
@@ -216,7 +221,11 @@ public class AssemblyStation : Interactable
     private GameObject CreateDish(RecipeData recipe)
     {
         GameObject dish;
-        if (recipe.dishPrefab != null)
+        if (FoodModelLibrary.DishPrefab(recipe) != null)
+        {
+            dish = FoodModelLibrary.CreateDish(recipe);
+        }
+        else if (recipe.dishPrefab != null)
         {
             dish = Instantiate(recipe.dishPrefab);
         }
