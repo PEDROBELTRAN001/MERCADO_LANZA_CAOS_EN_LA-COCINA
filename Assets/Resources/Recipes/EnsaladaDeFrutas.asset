@@ -15,8 +15,15 @@ MonoBehaviour:
   recipeName: Ensalada de Frutas
   recipeIcon: {fileID: 0}
   dishPrefab: {fileID: 919132149155446097, guid: f6134df4e392ba44db64aaaeb516d5dc, type: 3}
-  requiredIngredients: 0a000000i
+  requiredIngredients:
+  - 11
+  - 12
+  - 13
+  requiredPrep:
+  - 1
+  - 1
+  - 1
   requiresChopping: 1
   requiresCooking: 0
-  basePoints: 20
-  timeLimit: 40
+  basePoints: 35
+  timeLimit: 60

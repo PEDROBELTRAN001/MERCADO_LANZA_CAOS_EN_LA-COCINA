@@ -6,6 +6,7 @@ public class SimpleInput : MonoBehaviour
     public static SimpleInput Instance;
     public Vector2 MoveInput { get; private set; }
     public bool InteractPressed { get; private set; }
+    public bool SprintHeld { get; private set; }
 
     private void Awake()
     {
@@ -35,5 +36,8 @@ public class SimpleInput : MonoBehaviour
 
         // Interactuar (solo en el frame que se presiona)
         InteractPressed = Keyboard.current.eKey.wasPressedThisFrame;
+
+        // Correr (Shift)
+        SprintHeld = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
     }
 }

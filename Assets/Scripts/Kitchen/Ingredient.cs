@@ -30,7 +30,11 @@ public class Ingredient : MonoBehaviour
         Bean,       // haba
         PurpleCorn, // maiz morado (api)
         Dough,      // masa de pastel
-        Fruit       // fruta picada
+        Fruit,      // fruta (generica, ya no la usa ninguna receta)
+        // Frutas de la ensalada (al final, por la misma razon)
+        Banana,     // platano
+        Papaya,
+        Strawberry  // frutilla
     }
 
     private void Start()

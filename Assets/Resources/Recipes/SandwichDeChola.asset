@@ -16,7 +16,10 @@ MonoBehaviour:
   recipeIcon: {fileID: 0}
   dishPrefab: {fileID: 919132149155446097, guid: 5a0ac288cb3e227449f4433a288e8602, type: 3}
   requiredIngredients: 0200000003000000i
+  requiredPrep:
+  - 0
+  - 2
   requiresChopping: 0
-  requiresCooking: 0
-  basePoints: 25
-  timeLimit: 45
+  requiresCooking: 1
+  basePoints: 30
+  timeLimit: 55

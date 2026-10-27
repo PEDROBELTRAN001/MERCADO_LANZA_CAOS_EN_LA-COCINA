@@ -14,6 +14,14 @@ public class OrderSystem : MonoBehaviour
     public float firstOrderDelay = 5f;
     public int maxOrders = 5;
 
+    [Header("Dificultad progresiva")]
+    [Tooltip("Segundos entre pedidos al final de la partida (al inicio se usa orderInterval)")]
+    public float finalOrderInterval = 12f;
+    [Tooltip("Multiplicador del tiempo de cada pedido al final de la partida (1 = sin cambio)")]
+    public float finalTimeMultiplier = 0.8f;
+    [Tooltip("Fraccion de la partida en la que empieza la hora punta (avisa al jugador)")]
+    [Range(0f, 1f)] public float rushHourAt = 0.66f;
+
     [Header("Penalizacion")]
     [Tooltip("Puntos que se pierden cuando un pedido vence (el cliente se va sin comer)")]
     public int expiredPenalty = 10;
@@ -23,6 +31,7 @@ public class OrderSystem : MonoBehaviour
 
     private List<Order> activeOrders = new List<Order>();
     private RecipeData[] availableRecipes;
+    private bool rushAnnounced;
 
     public event System.Action<Order> OnNewOrder;
     public event System.Action<Order> OnOrderCompleted;
@@ -70,6 +79,7 @@ public class OrderSystem : MonoBehaviour
         foreach (Order order in activeOrders)
             if (order.table != null) order.table.ClearOrder();
         activeOrders.Clear();
+        rushAnnounced = false;
         StartCoroutine(OrderCycle());
     }
 
@@ -77,7 +87,15 @@ public class OrderSystem : MonoBehaviour
     {
         // Los tiempos de los pedidos bajan cada frame (antes solo bajaban una vez cada orderInterval)
         if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameManager.GameState.Playing)
+        {
             UpdateOrders();
+
+            if (!rushAnnounced && Progress >= rushHourAt)
+            {
+                rushAnnounced = true;
+                FloatingWindows.ShowInfo("¡HORA PUNTA!", "Llegan más caseros: los pedidos salen más seguido y con menos tiempo.");
+            }
+        }
     }
 
     private IEnumerator OrderCycle()
@@ -91,7 +109,18 @@ public class OrderSystem : MonoBehaviour
                 GenerateNewOrder();
             }
 
-            yield return new WaitForSeconds(orderInterval);
+            yield return new WaitForSeconds(Mathf.Lerp(orderInterval, finalOrderInterval, Progress));
+        }
+    }
+
+    // 0 al empezar la partida, 1 al terminar
+    private float Progress
+    {
+        get
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.gameDuration <= 0f) return 0f;
+            return Mathf.Clamp01(1f - gm.GetTimeRemaining() / gm.gameDuration);
         }
     }
 
@@ -102,6 +131,8 @@ public class OrderSystem : MonoBehaviour
         RecipeData recipe = availableRecipes[Random.Range(0, availableRecipes.Length)];
         // Cada plato tiene su tiempo (un Plato Paceño lleva mas pasos que una ensalada)
         float timeLimit = recipe.timeLimit > 0f ? recipe.timeLimit : orderTimeLimit;
+        // Hacia el final de la partida los caseros tienen menos paciencia
+        timeLimit *= Mathf.Lerp(1f, finalTimeMultiplier, Progress);
         Order order = new Order(recipe.recipeName, recipe, timeLimit);
 
         FoodCourtTable freeTable = GetFreeTable();

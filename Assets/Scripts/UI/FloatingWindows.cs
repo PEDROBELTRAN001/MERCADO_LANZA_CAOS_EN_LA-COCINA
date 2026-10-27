@@ -34,13 +34,8 @@ public class FloatingWindows : MonoBehaviour
     [Tooltip("Segundos restantes de un pedido en los que se avisa que la mesa se impacienta")]
     public float orderHurrySeconds = 10f;
 
-    [Header("Sabotaje (simulado hasta que exista el impostor)")]
-    public bool simulateSabotage = true;
-    public float sabotageMinInterval = 40f;
-    public float sabotageMaxInterval = 70f;
-
     private enum Page { None, Story, Curriculum, Cards }
-    private enum Kind { Explore, Hurry, Sabotage }
+    private enum Kind { Explore, Info, Hurry, Sabotage }
 
     private class Toast
     {
@@ -128,14 +123,6 @@ public class FloatingWindows : MonoBehaviour
             weakness = "Una acusación falsa te hace perder tiempo." },
     };
 
-    private static readonly string[] SabotageClues =
-    {
-        "Una sombra con el uniforme de Doña Rosa merodea cerca de «{0}».",
-        "Alguien subió el fuego al máximo en «{0}». ¡Está saliendo humo!",
-        "Hay una mancha de aceite sospechosa junto a «{0}».",
-        "Alguien cambió los insumos de lugar cerca de «{0}».",
-    };
-
     // ---------------------------------------------------------------- estado
 
     private static FloatingWindows instance;
@@ -159,7 +146,6 @@ public class FloatingWindows : MonoBehaviour
     private Toast exploreToast;
     private readonly HashSet<Order> warnedOrders = new HashSet<Order>();
     private bool hurryShown;
-    private float nextSabotage;
     private float flashUntil;
     private PlayerController player;
 
@@ -176,14 +162,19 @@ public class FloatingWindows : MonoBehaviour
         if (hud != null) hud.gameObject.AddComponent<FloatingWindows>();
     }
 
-    // Para el sistema de sabotaje del impostor: llamar cuando intente sabotear una estacion
-    public static void ShowSabotageWarning(string target)
+    // Lo llama SabotageSystem cuando el impostor sabotea una estacion
+    public static void ShowSabotageWarning(string clue)
     {
         if (instance == null) return;
-        string clue = string.Format(SabotageClues[Random.Range(0, SabotageClues.Length)], target);
         instance.AddToast(Kind.Sabotage, "¡ADVERTENCIA! INTENTO DE SABOTAJE",
             clue + "\nRevisa la cocina y junta pistas para el Capibara-policía.", 7f);
         instance.flashUntil = Time.time + 1.5f;
+    }
+
+    // Aviso informativo (dorado), por ejemplo "¡Hora punta!"
+    public static void ShowInfo(string title, string text, float seconds = 5f)
+    {
+        if (instance != null) instance.AddToast(Kind.Info, title, text, seconds);
     }
 
     private void Awake()
@@ -306,7 +297,6 @@ public class FloatingWindows : MonoBehaviour
         warnedOrders.Clear();
         hurryShown = false;
         flashUntil = 0f;
-        nextSabotage = Time.time + Random.Range(sabotageMinInterval, sabotageMaxInterval);
         StartExploreTour();
     }
 
@@ -359,11 +349,6 @@ public class FloatingWindows : MonoBehaviour
             }
         }
 
-        if (simulateSabotage && Time.time >= nextSabotage)
-        {
-            nextSabotage = Time.time + Random.Range(sabotageMinInterval, sabotageMaxInterval);
-            ShowSabotageWarning(RandomSabotageTarget());
-        }
     }
 
     private void UpdateExploreTour()
@@ -397,15 +382,6 @@ public class FloatingWindows : MonoBehaviour
             exploreToast.end = Time.time + 3f;
             exploreToast = null;
         }
-    }
-
-    private string RandomSabotageTarget()
-    {
-        var names = new List<string>();
-        foreach (var s in FindObjectsByType<CookingStation>()) names.Add(s.DisplayName);
-        foreach (var s in FindObjectsByType<ChoppingStation>()) names.Add(s.DisplayName);
-        foreach (var s in FindObjectsByType<AssemblyStation>()) names.Add(s.DisplayName);
-        return names.Count > 0 ? names[Random.Range(0, names.Count)] : "el fogón de Doña Rosa";
     }
 
     private Toast AddToast(Kind kind, string title, string text, float seconds)
@@ -478,7 +454,8 @@ public class FloatingWindows : MonoBehaviour
 
     private void DrawToast(Toast t, Rect r, float alpha)
     {
-        Color tone = t.kind == Kind.Explore ? accentColor : urgentColor;
+        bool calm = t.kind == Kind.Explore || t.kind == Kind.Info;
+        Color tone = calm ? accentColor : urgentColor;
         GUI.color = new Color(1f, 1f, 1f, alpha);
 
         // El sabotaje tiene un borde rojo que late
@@ -492,7 +469,7 @@ public class FloatingWindows : MonoBehaviour
 
         Rect icon = new Rect(r.x + Scale(16), r.y + Scale(12), Scale(34), Scale(34));
         DrawCircle(icon, tone);
-        GUI.Label(icon, t.kind == Kind.Explore ? "i" : "!", iconStyle);
+        GUI.Label(icon, calm ? "i" : "!", iconStyle);
 
         Rect close = new Rect(r.xMax - Scale(30), r.y + Scale(6), Scale(24), Scale(24));
         GUI.Label(close, "x", center);
@@ -551,6 +528,9 @@ public class FloatingWindows : MonoBehaviour
             case Page.Cards: DrawCard(content); break;
         }
         DrawFooter(new Rect(r.x, r.yMax - Scale(64), r.width, Scale(64)));
+
+        // Franja de aguayo sobre la ventana, como un tejido que la cuelga
+        AndeanUI.DrawAguayo(new Rect(r.x - Scale(3), r.y - Scale(17), r.width + Scale(6), Scale(14)));
     }
 
     private void DrawFooter(Rect r)
@@ -697,6 +677,10 @@ public class FloatingWindows : MonoBehaviour
         GUI.Label(tag, c.role, small);
         small.normal.textColor = Color.white;
         small.alignment = TextAnchor.UpperLeft;
+
+        float chakana = Scale(30);
+        if (tag.yMax + Scale(16) + chakana < side.yMax)
+            AndeanUI.DrawChakana(new Rect(side.x + (leftW - chakana) / 2f, tag.yMax + Scale(16), chakana, chakana), new Color(1f, 1f, 1f, 0.35f));
 
         // Lado derecho: descripcion, estadisticas, habilidad y debilidad
         GUILayout.BeginArea(new Rect(side.xMax + Scale(32), r.y + Scale(28), r.width - leftW - Scale(64), r.height - Scale(36)));

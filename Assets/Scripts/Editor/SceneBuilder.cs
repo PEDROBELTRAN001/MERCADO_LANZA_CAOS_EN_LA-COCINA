@@ -367,8 +367,16 @@ public class SceneBuilder : EditorWindow
         BuildCrate(5, "Cerdo", false, Ingredient.IngredientType.Meat, new Color(0.75f, 0.40f, 0.35f), PrimitiveType.Cube, crateMat);
         BuildCrate(6, "Maíz morado", false, Ingredient.IngredientType.PurpleCorn, new Color(0.40f, 0.15f, 0.45f), PrimitiveType.Capsule, crateMat);
         BuildCrate(7, "Masa", true, Ingredient.IngredientType.Dough, new Color(0.95f, 0.90f, 0.80f), PrimitiveType.Sphere, crateMat);
-        BuildCrate(8, "Fruta", true, Ingredient.IngredientType.Fruit, new Color(0.90f, 0.25f, 0.30f), PrimitiveType.Sphere, crateMat);
+        BuildCrate(8, "Plátano", false, Ingredient.IngredientType.Banana, FruitColors[0], PrimitiveType.Capsule, crateMat);
+        BuildCrate(9, "Papaya", true, Ingredient.IngredientType.Papaya, FruitColors[1], PrimitiveType.Sphere, crateMat);
+        BuildCrate(10, "Frutilla", true, Ingredient.IngredientType.Strawberry, FruitColors[2], PrimitiveType.Sphere, crateMat);
     }
+
+    // Platano, papaya y frutilla (los usa tambien el menu "Agregar cajas de frutas")
+    public static readonly Color[] FruitColors =
+    {
+        new Color(0.98f, 0.86f, 0.25f), new Color(0.98f, 0.55f, 0.20f), new Color(0.88f, 0.12f, 0.20f)
+    };
 
     static void BuildCrate(int index, string ingredient, bool femenino, Ingredient.IngredientType type, Color color, PrimitiveType shape, Material crateMat)
     {
@@ -480,24 +488,26 @@ public class SceneBuilder : EditorWindow
             AssetDatabase.DeleteAsset(folder + "/" + old + ".asset");
 
         // Platos del juego, con el modelo de Blender de cada uno.
-        // RecipeData.CheckRecipe exige picar/cocinar TODOS los ingredientes de la receta.
+        // Cada ingrediente tiene su preparacion (RecipeData.requiredPrep), en el mismo orden.
+        const RecipeData.Prep None = RecipeData.Prep.None, Chop = RecipeData.Prep.Chop, Cook = RecipeData.Prep.Cook;
+
         CreateRecipe(folder, "PlatoPaceno", "Plato Paceño", "plato_pacenio.fbx", new Ingredient.IngredientType[] {
             Ingredient.IngredientType.Potato, Ingredient.IngredientType.Corn,
             Ingredient.IngredientType.Bean, Ingredient.IngredientType.Cheese
-        }, false, true, 40, 75f);
+        }, new[] { Cook, Cook, Cook, Cook }, 40, 75f);
 
-        // Simplificado: el cerdo ya viene horneado, solo se arma con el pan
+        // El pan va directo; el cerdo se cocina en la hornalla
         CreateRecipe(folder, "SandwichDeChola", "Sándwich de Chola", "SandwichDeChola.fbx", new Ingredient.IngredientType[] {
             Ingredient.IngredientType.Bread, Ingredient.IngredientType.Meat
-        }, false, false, 25, 45f);
+        }, new[] { None, Cook }, 30, 55f);
 
         CreateRecipe(folder, "ApiConPastel", "Api con Pastel", "ApiConPastel.fbx", new Ingredient.IngredientType[] {
             Ingredient.IngredientType.PurpleCorn, Ingredient.IngredientType.Dough
-        }, false, true, 30, 60f);
+        }, new[] { Cook, Cook }, 30, 60f);
 
         CreateRecipe(folder, "EnsaladaDeFrutas", "Ensalada de Frutas", "EnsaladaDeFrutas.fbx", new Ingredient.IngredientType[] {
-            Ingredient.IngredientType.Fruit
-        }, true, false, 20, 40f);
+            Ingredient.IngredientType.Banana, Ingredient.IngredientType.Papaya, Ingredient.IngredientType.Strawberry
+        }, new[] { Chop, Chop, Chop }, 35, 60f);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -505,7 +515,7 @@ public class SceneBuilder : EditorWindow
     }
 
     static void CreateRecipe(string folder, string fileName, string displayName, string dishFbx,
-        Ingredient.IngredientType[] ingredients, bool chop, bool cook, int points, float timeLimit)
+        Ingredient.IngredientType[] ingredients, RecipeData.Prep[] prep, int points, float timeLimit)
     {
         string path = folder + "/" + fileName + ".asset";
         RecipeData recipe = AssetDatabase.LoadAssetAtPath<RecipeData>(path);
@@ -516,8 +526,9 @@ public class SceneBuilder : EditorWindow
         recipe.recipeName = displayName;
         recipe.dishPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/" + dishFbx);
         recipe.requiredIngredients = ingredients;
-        recipe.requiresChopping = chop;
-        recipe.requiresCooking = cook;
+        recipe.requiredPrep = prep;
+        recipe.requiresChopping = System.Array.IndexOf(prep, RecipeData.Prep.Chop) >= 0;
+        recipe.requiresCooking = System.Array.IndexOf(prep, RecipeData.Prep.Cook) >= 0;
         recipe.basePoints = points;
         recipe.timeLimit = timeLimit;
 

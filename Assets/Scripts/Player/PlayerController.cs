@@ -4,6 +4,8 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 5f;
+    [Tooltip("Multiplicador de velocidad al correr con Shift")]
+    public float sprintMultiplier = 1.6f;
 
     [Header("Interaction")]
     public float interactionRange = 1.5f;
@@ -96,7 +98,8 @@ public class PlayerController : MonoBehaviour
         }
 
         // 2. Aplicar velocidad física recta
-        Vector3 velocity = moveDirection * moveSpeed;
+        bool sprint = SimpleInput.Instance != null && SimpleInput.Instance.SprintHeld;
+        Vector3 velocity = moveDirection * moveSpeed * (sprint ? sprintMultiplier : 1f);
         velocity.y = rb.linearVelocity.y; // Mantener la gravedad
         rb.linearVelocity = velocity;
     }

@@ -27,8 +27,11 @@ public class AssemblyStation : Interactable
         // Api con Pastel: el api (vaso) a un lado, el pastel al otro
         { Ingredient.IngredientType.PurpleCorn, new Vector3(-0.15f, 0.17f,  0f) },
         { Ingredient.IngredientType.Dough,      new Vector3( 0.12f, 0.12f,  0.04f) },
-        // Ensalada de Frutas: al centro
+        // Ensalada de Frutas: platano, papaya y frutilla en triangulo
         { Ingredient.IngredientType.Fruit,      new Vector3( 0f,    0.09f,  0f) },
+        { Ingredient.IngredientType.Banana,     new Vector3(-0.12f, 0.08f,  0.08f) },
+        { Ingredient.IngredientType.Papaya,     new Vector3( 0.12f, 0.08f,  0.08f) },
+        { Ingredient.IngredientType.Strawberry, new Vector3( 0f,    0.08f, -0.12f) },
     };
 
     private static readonly Dictionary<Ingredient.IngredientType, string> Names = new Dictionary<Ingredient.IngredientType, string>
@@ -38,11 +41,36 @@ public class AssemblyStation : Interactable
         { Ingredient.IngredientType.Bread, "pan" }, { Ingredient.IngredientType.Meat, "cerdo" },
         { Ingredient.IngredientType.PurpleCorn, "maíz morado" }, { Ingredient.IngredientType.Dough, "masa" },
         { Ingredient.IngredientType.Fruit, "fruta" },
+        { Ingredient.IngredientType.Banana, "plátano" }, { Ingredient.IngredientType.Papaya, "papaya" },
+        { Ingredient.IngredientType.Strawberry, "frutilla" },
     };
+
+    // La mesa de armado de la cocina (la usan las tarjetas de pedido del HUD)
+    public static AssemblyStation Instance { get; private set; }
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
         recipes = Resources.LoadAll<RecipeData>("Recipes");
+    }
+
+    // ¿Ya esta en el plato este ingrediente, preparado como lo pide la receta?
+    // (con el plato terminado, todos los de su receta cuentan como listos)
+    public bool IsOnPlate(RecipeData recipe, Ingredient.IngredientType type)
+    {
+        if (readyDish != null)
+        {
+            DishItem dish = readyDish.GetComponent<DishItem>();
+            return dish != null && dish.recipe == recipe;
+        }
+        if (plate == null) return false;
+        foreach (Ingredient i in plate.ingredients)
+            if (i != null && i.ingredientType == type && RecipeData.IsPrepared(i, recipe.PrepOf(type))) return true;
+        return false;
     }
 
     public override void Interact(PlayerController player)
@@ -190,8 +218,9 @@ public class AssemblyStation : Interactable
         var notReady = new List<string>();
         foreach (Ingredient i in plate.ingredients)
         {
-            if (recipe.requiresCooking && !i.isCooked) notReady.Add("cocinar " + NameOf(i.ingredientType));
-            if (recipe.requiresChopping && !i.isChopped) notReady.Add("picar " + NameOf(i.ingredientType));
+            RecipeData.Prep prep = recipe.PrepOf(i.ingredientType);
+            if (RecipeData.IsPrepared(i, prep)) continue;
+            notReady.Add((prep == RecipeData.Prep.Cook ? "cocinar " : "picar ") + NameOf(i.ingredientType));
         }
 
         string message = "Para " + recipe.recipeName;
@@ -249,7 +278,7 @@ public class AssemblyStation : Interactable
         return types;
     }
 
-    private static string NameOf(Ingredient.IngredientType type) =>
+    public static string NameOf(Ingredient.IngredientType type) =>
         Names.TryGetValue(type, out string n) ? n : type.ToString();
 
     private static string ListNames(List<Ingredient.IngredientType> types)
