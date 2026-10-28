@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a45317ee5f00f1664481ef51a60c3a9, type: 3}
+  m_Name: CharacterSkins
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterSkinCatalog
+  models:
+  - {fileID: 919132149155446097, guid: f0e7ad2c0da28a3409cc9c1df44eb152, type: 3}
+  - {fileID: 7735906994053720212, guid: 27faec86b8561ed4daeb758c6fdb6966, type: 3}
+  - {fileID: 8566216991741306138, guid: 3b400805c85e5f24cb4409bae94c7fc7, type: 3}
+  - {fileID: 8643895387159276885, guid: 8c1855d28a8d11b4f951d4360ab5a6fa, type: 3}
+  - {fileID: 4226133681442479635, guid: 468a8deec4cb49f081355442d5b59b3e, type: 3}

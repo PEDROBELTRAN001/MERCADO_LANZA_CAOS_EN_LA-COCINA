@@ -242,3 +242,17 @@ Assets/
 - **No detecta input:** Verificar Input System en Project Settings
 - **Bajo FPS:** Reducir calidad en Quality Settings
 - **Scripts no compilan:** Verificar que todos los archivos estan en carpetas correctas
+
+
+## Menú, modos y capibara (Douglas)
+
+Integración preparada sobre `presentacion_3`, conservando el mapa, los diseños originales, las recetas y las estaciones. Incluye historia, currículum y cinco fichas con foto, selección de apariencia, modo individual y multijugador local.
+
+- Tomás: WASD/flechas + E; Rival local: IJKL + O y U para el humo/aceite existente.
+- En individual, el Rival usa el sabotaje automático. En local lo controla el segundo jugador.
+- Examinar el rastro con E y presentar la prueba al capibara con E. El policía persigue al Rival identificado y lo suspende durante ocho segundos cuando lo alcanza, tanto humano como automático. Tomás conserva sus controles y sus ingredientes.
+- F1: fichas; F2: currículum; F3: historia. Estas ventanas pausan el turno.
+
+Abrir `Assets/Scenes/KitchenScene.unity` y pulsar Play. Descargar los recursos con Git LFS (`git lfs pull`).
+
+[Guía de uso y alcance](Documentation/MENU_Y_MODOS_PRESENTACION_3.md) · [Pruebas](Documentation/PRUEBAS_MENU_Y_CAPIBARA.md)
