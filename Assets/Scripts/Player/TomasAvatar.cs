@@ -171,6 +171,12 @@ public class TomasAvatar : MonoBehaviour
         int[] triangles = mesh.triangles;
         float offset = push * shape.size;
 
+        // La malla tiene caras planas (vertices repetidos con normales distintas): se empuja con la
+        // normal promedio de cada posicion, si no los triangulos se separan y la pieza se ve partida
+        var smooth = new Dictionary<Vector3, Vector3>();
+        for (int i = 0; i < vertices.Length; i++)
+            smooth[vertices[i]] = (smooth.TryGetValue(vertices[i], out Vector3 sum) ? sum : Vector3.zero) + normals[i];
+
         var map = new Dictionary<int, int>();
         var newVertices = new List<Vector3>();
         var newNormals = new List<Vector3>();
@@ -189,7 +195,7 @@ public class TomasAvatar : MonoBehaviour
                 {
                     index = newVertices.Count;
                     map[v] = index;
-                    newVertices.Add(vertices[v] + normals[v] * offset);
+                    newVertices.Add(vertices[v] + smooth[vertices[v]].normalized * offset);
                     newNormals.Add(normals[v]);
                     newWeights.Add(weights[v]);
                 }
@@ -206,7 +212,12 @@ public class TomasAvatar : MonoBehaviour
         part.SetTriangles(newTriangles, 0);
         part.RecalculateBounds();
         created.Add(part);
+        return CreateSkinned(source, name, part, material);
+    }
 
+    // Una pieza nueva que se deforma con el mismo esqueleto que la malla original
+    private static SkinnedMeshRenderer CreateSkinned(SkinnedMeshRenderer source, string name, Mesh part, Material material)
+    {
         var go = new GameObject(name);
         go.transform.SetParent(source.transform.parent, false);
         go.transform.localPosition = source.transform.localPosition;
@@ -221,85 +232,125 @@ public class TomasAvatar : MonoBehaviour
         return smr;
     }
 
-    private void AddButton(SkinnedMeshRenderer shirt, ShapeSpace shape, float height)
+    // Botones y corbata se arman en el espacio de la camisa y copian los pesos del vertice de la camisa
+    // mas cercano: asi se doblan junto con la panza y no quedan hundidos dentro del cuerpo al animarse
+    private SkinnedMeshRenderer SkinnedProp(SkinnedMeshRenderer shirt, string name, List<Vector3> vertices, List<int> triangles, Material material)
     {
-        if (!ChestPoint(shirt, shape, height, out Vector3 point, out Transform parent)) return;
+        Mesh mesh = shirt.sharedMesh;
+        Vector3[] shirtVertices = mesh.vertices;
+        BoneWeight[] shirtWeights = mesh.boneWeights;
+        var weights = new BoneWeight[vertices.Count];
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            int nearest = 0;
+            float best = float.MaxValue;
+            for (int j = 0; j < shirtVertices.Length; j++)
+            {
+                float d = (shirtVertices[j] - vertices[i]).sqrMagnitude;
+                if (d < best) { best = d; nearest = j; }
+            }
+            weights[i] = shirtWeights[nearest];
+        }
 
-        var button = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        Destroy(button.GetComponent<Collider>());
-        button.name = "Boton";
-        button.transform.SetParent(parent, false);
-        button.transform.localPosition = parent.InverseTransformPoint(point);
-        float worldSize = 0.044f * shape.size * shirt.transform.lossyScale.x;
-        button.transform.localScale = Vector3.one * worldSize / Mathf.Max(0.0001f, parent.lossyScale.x);
-        button.GetComponent<Renderer>().sharedMaterial = NewMaterial(buttonColor, 0.6f);
-        buttons.Add(button);
+        var part = new Mesh { name = name };
+        part.SetVertices(vertices);
+        part.SetTriangles(triangles, 0);
+        part.boneWeights = weights;
+        part.bindposes = mesh.bindposes;
+        part.RecalculateNormals();
+        part.RecalculateBounds();
+        created.Add(part);
+        return CreateSkinned(shirt, name, part, material);
     }
 
-    // Corbata del Rival: nudo arriba, tramos que siguen la curva de la panza y punta en rombo,
+    // Agrega el triangulo mirando hacia afuera (lejos de "inside")
+    private static void Triangle(List<Vector3> v, List<int> t, int a, int b, int c, Vector3 inside)
+    {
+        Vector3 normal = Vector3.Cross(v[b] - v[a], v[c] - v[a]);
+        bool outward = Vector3.Dot(normal, (v[a] + v[b] + v[c]) / 3f - inside) >= 0f;
+        t.Add(a);
+        t.Add(outward ? b : c);
+        t.Add(outward ? c : b);
+    }
+
+    private void AddButton(SkinnedMeshRenderer shirt, ShapeSpace shape, float height)
+    {
+        if (!ChestPoint(shirt.sharedMesh, shape, height, out Vector3 center)) return;
+
+        // Boton chato: octaedro aplastado contra la pechera
+        float r = 0.022f * shape.size;
+        var v = new List<Vector3>
+        {
+            center + shape.right * r, center - shape.right * r, center + shape.up * r, center - shape.up * r,
+            center + shape.front * r * 0.6f, center - shape.front * r * 0.3f,
+        };
+        var t = new List<int>();
+        foreach (int side in new[] { 0, 1 })
+            foreach (int vertical in new[] { 2, 3 })
+                foreach (int depth in new[] { 4, 5 })
+                    Triangle(v, t, side, vertical, depth, center);
+        buttons.Add(SkinnedProp(shirt, "Boton", v, t, NewMaterial(buttonColor, 0.6f)).gameObject);
+    }
+
+    // Corbata del Rival: nudo arriba, hoja que sigue la curva de la panza y punta en pico,
     // sobre la camisa que se ve en la V del chaleco
     private GameObject MakeTie(SkinnedMeshRenderer shirt)
     {
+        Mesh mesh = shirt.sharedMesh;
+        if (!mesh.isReadable) return null;
         var shape = new ShapeSpace(shirt, transform);
-        float[] heights = { 0.80f, 0.66f, 0.52f, 0.38f };
-        var points = new Vector3[heights.Length];
-        Transform parent = null;
+
+        // Secciones de arriba hacia abajo: altura en la pechera y media anchura
+        float[] heights = { 0.84f, 0.78f, 0.75f, 0.64f, 0.52f, 0.40f };
+        float[] widths = { 0.030f, 0.026f, 0.020f, 0.034f, 0.042f, 0.046f };
+        float lift = 0.012f * shape.size, half = 0.008f * shape.size;
+        var centers = new List<Vector3>();
         for (int i = 0; i < heights.Length; i++)
         {
-            if (!ChestPoint(shirt, shape, heights[i], out points[i], out Transform bone)) return null;
-            if (i == 1) parent = bone;
+            if (!ChestPoint(mesh, shape, heights[i], out Vector3 c)) return null;
+            centers.Add(c + shape.front * lift);
         }
+        // Punta en pico, un poco mas abajo de la ultima seccion
+        Vector3 last = centers[centers.Count - 1], dir = (last - centers[centers.Count - 2]).normalized;
+        Vector3 tip = last + dir * widths[widths.Length - 1] * 1.2f * shape.size;
 
-        float length = 0f;
-        for (int i = 1; i < points.Length; i++) length += Vector3.Distance(points[i - 1], points[i]);
-        float width = length * 0.24f, thickness = length * 0.05f;
-        Vector3 front = transform.forward;
-        Material material = NewMaterial(tieColor, 0.45f);
-
-        var root = new GameObject("Corbata");
-        root.transform.SetPositionAndRotation(points[0], transform.rotation);
-
-        // Nudo
-        TiePiece(root.transform, material, points[0] + front * thickness, front, transform.up,
-            new Vector3(width * 0.8f, width * 0.55f, thickness * 1.6f));
-        // Tramos de la hoja
-        for (int i = 1; i < points.Length; i++)
+        var v = new List<Vector3>();
+        var t = new List<int>();
+        for (int i = 0; i < centers.Count; i++)
         {
-            Vector3 a = points[i - 1], b = points[i];
-            TiePiece(root.transform, material, (a + b) / 2f + front * thickness, front, (a - b).normalized,
-                new Vector3(width, Vector3.Distance(a, b) * 1.08f, thickness));
+            Vector3 w = shape.right * widths[i] * shape.size, d = shape.front * half;
+            v.Add(centers[i] - w + d); v.Add(centers[i] + w + d); v.Add(centers[i] + w - d); v.Add(centers[i] - w - d);
         }
-        // Punta en rombo
-        Vector3 down = (points[points.Length - 1] - points[points.Length - 2]).normalized;
-        GameObject tip = TiePiece(root.transform, material, points[points.Length - 1] + front * thickness, front, -down,
-            new Vector3(width * 0.71f, width * 0.71f, thickness));
-        tip.transform.Rotate(0f, 0f, 45f, Space.Self);
+        for (int i = 0; i + 1 < centers.Count; i++)
+        {
+            Vector3 inside = (centers[i] + centers[i + 1]) / 2f;
+            for (int k = 0; k < 4; k++)
+            {
+                int a = i * 4 + k, b = i * 4 + (k + 1) % 4, c = a + 4, e = b + 4;
+                Triangle(v, t, a, b, e, inside);
+                Triangle(v, t, a, e, c, inside);
+            }
+        }
+        // Tapa de arriba y punta
+        Triangle(v, t, 0, 1, 2, centers[1]);
+        Triangle(v, t, 0, 2, 3, centers[1]);
+        int tipFront = v.Count; v.Add(tip + shape.front * half);
+        int tipBack = v.Count; v.Add(tip - shape.front * half);
+        int l = (centers.Count - 1) * 4;
+        Triangle(v, t, l, l + 1, tipFront, last);
+        Triangle(v, t, l + 3, l + 2, tipBack, last);
+        Triangle(v, t, l, tipFront, tipBack, last); Triangle(v, t, l, tipBack, l + 3, last);
+        Triangle(v, t, l + 1, tipFront, tipBack, last); Triangle(v, t, l + 1, tipBack, l + 2, last);
 
-        root.transform.SetParent(parent != null ? parent : transform, true);
-        return root;
+        return SkinnedProp(shirt, "Corbata", v, t, NewMaterial(tieColor, 0.45f)).gameObject;
     }
 
-    private static GameObject TiePiece(Transform root, Material material, Vector3 position, Vector3 front, Vector3 up, Vector3 size)
+    // Punto (en espacio de la malla) del frente del pecho a esa altura
+    private static bool ChestPoint(Mesh mesh, ShapeSpace shape, float height, out Vector3 point)
     {
-        var piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Destroy(piece.GetComponent<Collider>());
-        piece.name = "Corbata_pieza";
-        piece.transform.SetPositionAndRotation(position, Quaternion.LookRotation(Vector3.ProjectOnPlane(front, up), up));
-        piece.transform.localScale = size;
-        piece.transform.SetParent(root, true);
-        piece.GetComponent<Renderer>().sharedMaterial = material;
-        return piece;
-    }
-
-    // Punto (en el mundo) del frente del pecho a esa altura, y el hueso que mas mueve esa parte
-    private bool ChestPoint(SkinnedMeshRenderer shirt, ShapeSpace shape, float height, out Vector3 world, out Transform parent)
-    {
-        world = Vector3.zero;
-        parent = null;
-        Mesh mesh = shirt.sharedMesh;
+        point = Vector3.zero;
         if (!mesh.isReadable) return false;
         Vector3[] vertices = mesh.vertices;
-        BoneWeight[] weights = mesh.boneWeights;
 
         // La malla es low poly: la profundidad del pecho a esa altura se interpola entre
         // el vertice central mas cercano de abajo y el de arriba
@@ -316,15 +367,7 @@ public class TomasAvatar : MonoBehaviour
         if (below < 0) { below = above; belowU = aboveU; belowF = aboveF; }
         if (above < 0) { above = below; aboveU = belowU; aboveF = belowF; }
         float t = aboveU > belowU ? (height - belowU) / (aboveU - belowU) : 0f;
-        Vector3 point = shape.Point(0f, height, Mathf.Lerp(belowF, aboveF, t)) + shape.front * (0.015f * shape.size);
-
-        int nearest = t < 0.5f ? below : above;
-        int bone = weights[nearest].boneIndex0;
-        if (bone >= shirt.bones.Length || shirt.bones[bone] == null) return false;
-
-        parent = shirt.bones[bone];
-        // bindpose: del espacio de la malla al espacio del hueso
-        world = parent.TransformPoint(mesh.bindposes[bone].MultiplyPoint3x4(point));
+        point = shape.Point(0f, height, Mathf.Lerp(belowF, aboveF, t)) + shape.front * (0.015f * shape.size);
         return true;
     }
 
