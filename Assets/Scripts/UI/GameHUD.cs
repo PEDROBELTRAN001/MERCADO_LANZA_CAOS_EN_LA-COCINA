@@ -62,12 +62,14 @@ public class GameHUD : MonoBehaviour
         if (state == GameManager.GameState.Ready && enter)
         {
             ClearNotice();
-            GameManager.Instance.SetState(GameManager.GameState.Playing);
+            if(GameFrontEnd.Instance!=null)GameFrontEnd.Instance.StartSelectedGame();
+            else GameManager.Instance.SetState(GameManager.GameState.Playing);
         }
         else if (state == GameManager.GameState.GameOver && Keyboard.current.rKey.wasPressedThisFrame)
         {
             ClearNotice();
-            GameManager.Instance.RestartGame();
+            if(GameFrontEnd.Instance!=null)GameFrontEnd.Instance.ReturnToMenu();
+            else GameManager.Instance.RestartGame();
         }
     }
 
@@ -80,6 +82,7 @@ public class GameHUD : MonoBehaviour
         {
             case GameManager.GameState.Ready:
                 if (FloatingWindows.IsOpen) break;
+                if(GameFrontEnd.Instance!=null){GameFrontEnd.Instance.DrawReady();break;}
                 DrawCenterPanel("MERCADO LANZA: CAOS EN LA COCINA",
                     "Atiende los pedidos de las mesas antes de que se acabe el tiempo.\n\n" +
                     "WASD: moverse    Shift: correr    E: interactuar    Rueda del mouse: zoom\n" +
@@ -92,6 +95,7 @@ public class GameHUD : MonoBehaviour
                 DrawOrders();
                 DrawInteraction();
                 DrawNotice();
+                DrawSuspension();
                 break;
 
             case GameManager.GameState.GameOver:
@@ -105,7 +109,7 @@ public class GameHUD : MonoBehaviour
                     "Sabotajes del impostor: " + (SabotageSystem.Instance != null ? SabotageSystem.Instance.SabotageCount : 0) + "\n\n" +
                     (GameManager.Instance.GetCurrentScore() >= GameManager.Instance.targetScore
                         ? "¡Doña Rosa está orgullosa!" : "Los caseros se fueron con hambre...") +
-                    "\n\nPresiona R para jugar otra vez");
+                    "\n\nPresiona R para volver al menú");
                 break;
         }
     }
@@ -257,6 +261,9 @@ public class GameHUD : MonoBehaviour
 
     private void DrawInteraction()
     {
+        var local=LocalMultiplayer.Instance;
+        if(local!=null && local.Mode==LocalMultiplayer.GameMode.LocalMultiplayer){DrawLocalInteraction(local.Worker,false);DrawLocalInteraction(local.Rival,true);return;}
+        if(local!=null)player=local.Worker;
         if (player == null) player = FindAnyObjectByType<PlayerController>();
         if (player == null) return;
 
@@ -291,6 +298,15 @@ public class GameHUD : MonoBehaviour
         if (targetIcon != null) GUI.DrawTexture(new Rect(r.xMax - Scale(6) - icon, r.y + (h - icon) / 2f, icon, icon), targetIcon, ScaleMode.ScaleToFit);
     }
 
+    private void DrawLocalInteraction(PlayerController actor,bool rival)
+    {
+        if(actor==null)return;string text=rival?"Rival · O":"Tomás · E";
+        if(actor.Hand.childCount>0)text+=" · "+actor.Hand.GetChild(0).name;
+        if(actor.CurrentInteractable!=null)text+=" → "+actor.CurrentInteractable.DisplayName;
+        float width=Screen.width*.5f-Scale(20),height=Scale(48);Rect rect=new Rect((rival?Screen.width*.5f:0)+Scale(10),Screen.height-height-Scale(12),width,height);
+        GUI.DrawTexture(rect,panelTexture);GUI.Label(rect,text,centerStyle);
+    }
+
     private void DrawNotice()
     {
         if (string.IsNullOrEmpty(notice) || Time.time > noticeUntil) return;
@@ -301,6 +317,13 @@ public class GameHUD : MonoBehaviour
         centerStyle.normal.textColor = noticeIsWarning ? urgentColor : accentColor;
         GUI.Label(r, notice, centerStyle);
         centerStyle.normal.textColor = Color.white;
+    }
+
+    private void DrawSuspension()
+    {
+        var system=InvestigationSystem.Instance;if(system==null || system.ReturnSeconds<=0)return;
+        Rect rect=new Rect(Screen.width-Scale(310),Scale(22),Scale(294),Scale(48));GUI.DrawTexture(rect,panelTexture);
+        centerStyle.normal.textColor=accentColor;GUI.Label(rect,"Rival suspendido · "+Mathf.CeilToInt(system.ReturnSeconds)+" s",centerStyle);centerStyle.normal.textColor=Color.white;
     }
 
     private void DrawCenterPanel(string title, string body)

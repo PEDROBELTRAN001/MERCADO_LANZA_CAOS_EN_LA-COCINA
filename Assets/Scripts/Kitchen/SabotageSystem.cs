@@ -21,6 +21,11 @@ public class SabotageSystem : MonoBehaviour
     public float quietFinalSeconds = 15f;
 
     public int SabotageCount { get; private set; }
+    public event System.Action<PlayerController,Interactable> OnSabotageCommitted;
+    public void DelayAutomatic(float seconds)
+    {
+        if(GameManager.Instance!=null)nextSabotage=Mathf.Max(nextSabotage,GameManager.Instance.gameDuration-GameManager.Instance.GetTimeRemaining()+seconds);
+    }
 
     private float nextSabotage = -1f;
     private readonly List<GameObject> activeEffects = new List<GameObject>();
@@ -60,6 +65,8 @@ public class SabotageSystem : MonoBehaviour
     {
         var gm = GameManager.Instance;
         if (!sabotageEnabled || gm == null || gm.CurrentState != GameManager.GameState.Playing || nextSabotage < 0f) return;
+        if(!PlayerController.GameplayActive)return;
+        if(LocalMultiplayer.Instance!=null && LocalMultiplayer.Instance.Rival!=null && LocalMultiplayer.Instance.Rival.IsDetained)return;
 
         float elapsed = gm.gameDuration - gm.GetTimeRemaining();
         if (elapsed < nextSabotage || gm.GetTimeRemaining() <= quietFinalSeconds) return;
@@ -83,6 +90,12 @@ public class SabotageSystem : MonoBehaviour
 
     public void Sabotage(Interactable target)
     {
+        var local=LocalMultiplayer.Instance;
+        Sabotage(target,local!=null && local.Mode==LocalMultiplayer.GameMode.SinglePlayer?local.Rival:null);
+    }
+    public void Sabotage(Interactable target,PlayerController culprit)
+    {
+        if(target==null || (culprit!=null && (culprit.IsDetained || LocalMultiplayer.Instance==null || culprit!=LocalMultiplayer.Instance.Rival)))return;
         SabotageCount++;
         activeEffects.RemoveAll(fx => fx == null);
         Bounds b = BoundsOf(target);
@@ -97,6 +110,7 @@ public class SabotageSystem : MonoBehaviour
             activeEffects.Add(SabotageEffects.OilStain(FloorPointNear(target.transform, b)));
             FloatingWindows.ShowSabotageWarning("Hay una mancha de aceite sospechosa junto a «" + target.DisplayName + "».");
         }
+        if(culprit!=null)OnSabotageCommitted?.Invoke(culprit,target);
     }
 
     private static Bounds BoundsOf(Interactable target)
