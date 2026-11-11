@@ -23,6 +23,8 @@ public class RecipeData : ScriptableObject
 
     [Header("Scoring")]
     public int basePoints = 25;
+    [Tooltip("La Cholita VIP puede pedir esta receta")]
+    public bool vipEligible;
 
     [Header("Balance")]
     [Tooltip("Segundos que tiene el jugador para entregar este plato (0 = usar el tiempo general de OrderSystem)")]

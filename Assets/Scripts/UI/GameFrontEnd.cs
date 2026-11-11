@@ -56,7 +56,7 @@ public class GameFrontEnd : MonoBehaviour
         if(GUI.Button(new Rect(952,628,424,66),"CURRÍCULUM · F2",button))FloatingWindows.OpenCurriculum();
         GUI.Label(new Rect(64,723,870,75),SelectedMode==LocalMultiplayer.GameMode.SinglePlayer?"Tomás: WASD · E: interactuar · Shift: correr\nSe conserva el sabotaje automático de la partida.":"Tomás: WASD + E · Rival: IJKL + O\nRival: U para humo/aceite en una estación cercana.",body);
         if(GUI.Button(new Rect(994,729,382,76),"COMENZAR PARTIDA",button))StartSelectedGame();
-        GUI.Label(new Rect(64,840,1312,32),"Elige las apariencias antes del turno. El personaje seleccionado conserva su rol y sus controles.",muted);
+        GUI.Label(new Rect(64,822,1312,65),"Garzones: termina con 3,5 estrellas, 2 pedidos VIP y 100 puntos. Rival: provoca el fracaso del puesto.\nPierdes con 3 clientes perdidos, 0 estrellas o 2 platos contaminados VIP. U en armado sala un plato listo.",muted);
         GUI.matrix=matrix;GUI.color=color;GUI.depth=depth;
     }
     private void DrawSkin(Rect rect,bool rival)

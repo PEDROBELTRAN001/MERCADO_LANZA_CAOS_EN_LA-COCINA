@@ -80,12 +80,33 @@ public class SabotageSystem : MonoBehaviour
     // Tambien lo puede llamar la IA del impostor cuando exista
     public void Sabotage()
     {
+        if (!PlayerController.GameplayActive) return;
         var targets = new List<Interactable>();
         targets.AddRange(FindObjectsByType<CookingStation>());
         targets.AddRange(FindObjectsByType<ChoppingStation>());
         targets.AddRange(FindObjectsByType<AssemblyStation>());
         if (targets.Count == 0) return;
+        // Prioriza una comanda lista: el rival automático también puede arruinar la comida.
+        var assembly = AssemblyStation.Instance;
+        if (assembly != null && assembly.TrySaltReadyDish())
+        {
+            RecordSalt(assembly);
+            return;
+        }
         Sabotage(targets[Random.Range(0, targets.Count)]);
+    }
+
+    private void RecordSalt(AssemblyStation target)
+    {
+        var local = LocalMultiplayer.Instance;
+        RecordSalt(target, local != null ? local.Rival : null);
+    }
+
+    private void RecordSalt(AssemblyStation target, PlayerController culprit)
+    {
+        SabotageCount++;
+        FloatingWindows.ShowSabotageWarning("¡Alguien echó sal al plato de la mesa de armado! Mira la señal SAL y descártalo en la basura.");
+        if (culprit != null) OnSabotageCommitted?.Invoke(culprit, target);
     }
 
     public void Sabotage(Interactable target)
@@ -95,7 +116,13 @@ public class SabotageSystem : MonoBehaviour
     }
     public void Sabotage(Interactable target,PlayerController culprit)
     {
+        if (!PlayerController.GameplayActive) return;
         if(target==null || (culprit!=null && (culprit.IsDetained || LocalMultiplayer.Instance==null || culprit!=LocalMultiplayer.Instance.Rival)))return;
+        if (target is AssemblyStation assembly && assembly.TrySaltReadyDish())
+        {
+            RecordSalt(assembly, culprit);
+            return;
+        }
         SabotageCount++;
         activeEffects.RemoveAll(fx => fx == null);
         Bounds b = BoundsOf(target);

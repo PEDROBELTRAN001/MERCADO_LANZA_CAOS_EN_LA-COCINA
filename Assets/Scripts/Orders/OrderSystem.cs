@@ -32,6 +32,7 @@ public class OrderSystem : MonoBehaviour
     private List<Order> activeOrders = new List<Order>();
     private RecipeData[] availableRecipes;
     private bool rushAnnounced;
+    private int generatedOrders;
 
     public event System.Action<Order> OnNewOrder;
     public event System.Action<Order> OnOrderCompleted;
@@ -80,6 +81,7 @@ public class OrderSystem : MonoBehaviour
             if (order.table != null) order.table.ClearOrder();
         activeOrders.Clear();
         rushAnnounced = false;
+        generatedOrders = 0;
         StartCoroutine(OrderCycle());
     }
 
@@ -102,9 +104,10 @@ public class OrderSystem : MonoBehaviour
     {
         yield return new WaitForSeconds(firstOrderDelay);
 
-        while (GameManager.Instance.CurrentState == GameManager.GameState.Playing)
+        while (GameManager.Instance.CurrentState != GameManager.GameState.GameOver &&
+               GameManager.Instance.CurrentState != GameManager.GameState.Ready)
         {
-            if (activeOrders.Count < maxOrders)
+            if (PlayerController.GameplayActive && activeOrders.Count < maxOrders)
             {
                 GenerateNewOrder();
             }
@@ -129,17 +132,27 @@ public class OrderSystem : MonoBehaviour
         if (availableRecipes.Length == 0) return;
 
         RecipeData recipe = availableRecipes[Random.Range(0, availableRecipes.Length)];
+        // Alterna pedidos VIP desde el primero para ofrecer dos oportunidades temprano.
+        bool vip = generatedOrders % 2 == 0;
+        if (vip)
+        {
+            var vipRecipes = System.Array.FindAll(availableRecipes, r => r.vipEligible);
+            if (vipRecipes.Length > 0) recipe = vipRecipes[Random.Range(0, vipRecipes.Length)];
+            else vip = false;
+        }
         // Cada plato tiene su tiempo (un Plato Paceño lleva mas pasos que una ensalada)
         float timeLimit = recipe.timeLimit > 0f ? recipe.timeLimit : orderTimeLimit;
         // Hacia el final de la partida los caseros tienen menos paciencia
         timeLimit *= Mathf.Lerp(1f, finalTimeMultiplier, Progress);
         Order order = new Order(recipe.recipeName, recipe, timeLimit);
+        order.isVip = vip;
 
         FoodCourtTable freeTable = GetFreeTable();
         if (freeTable != null)
         {
             freeTable.SetOrder(order);
             activeOrders.Add(order);
+            generatedOrders++;
             OnNewOrder?.Invoke(order);
             Debug.Log("Nuevo pedido: " + order.dishName);
         }
@@ -149,6 +162,7 @@ public class OrderSystem : MonoBehaviour
     {
         for (int i = activeOrders.Count - 1; i >= 0; i--)
         {
+            if (GameManager.Instance.CurrentState != GameManager.GameState.Playing) break;
             activeOrders[i].timeRemaining -= Time.deltaTime;
 
             if (activeOrders[i].timeRemaining <= 0)
@@ -171,10 +185,12 @@ public class OrderSystem : MonoBehaviour
 
     public void CompleteOrder(Order order)
     {
+        if (!PlayerController.GameplayActive) return;
         if (activeOrders.Contains(order))
         {
             activeOrders.Remove(order);
             GameManager.Instance.RegisterOrderDelivered();
+            if (order.isVip) GameManager.Instance.RegisterVipDelivery(false);
             OnOrderCompleted?.Invoke(order);
 
             float timeBonus = order.timeRemaining / order.timeLimit;
@@ -183,6 +199,13 @@ public class OrderSystem : MonoBehaviour
 
             Debug.Log("Pedido completado: " + order.dishName + " +Bonus: " + bonusPoints);
         }
+    }
+
+    public void RejectContaminatedOrder(Order order)
+    {
+        if (!PlayerController.GameplayActive || !activeOrders.Remove(order)) return;
+        if (order.table != null) order.table.ClearOrder();
+        GameManager.Instance.RegisterContaminatedDelivery(order.isVip);
     }
 
     private FoodCourtTable GetFreeTable()

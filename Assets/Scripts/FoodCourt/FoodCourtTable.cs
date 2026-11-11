@@ -29,6 +29,7 @@ public class FoodCourtTable : Interactable
 
     private void TryServeOrder(PlayerController player)
     {
+        if (!PlayerController.GameplayActive || player.role != PlayerController.PlayerRole.Worker) return;
         Transform hand = player.transform.Find("Hand");
         if (hand == null || hand.childCount == 0)
         {
@@ -57,6 +58,14 @@ public class FoodCourtTable : Interactable
         item.transform.SetParent(plateSlot);
         item.transform.position = plateSlot != null ? plateSlot.position : new Vector3(transform.position.x, top + 0.02f, transform.position.z);
         Destroy(item, servedDishLifetime);
+
+        if (dish.IsContaminated)
+        {
+            OrderSystem.Instance.RejectContaminatedOrder(currentOrder);
+            GameHUD.Warn("¡Plato salado rechazado! -50 puntos y -1,5 estrellas. Descarta los platos con la señal SAL.", 5f);
+            ClearOrder();
+            return;
+        }
 
         int points = dish.recipe.basePoints;
         GameManager.Instance.AddScore(points);
@@ -93,6 +102,7 @@ public class FoodCourtTable : Interactable
 [System.Serializable]
 public class Order
 {
+    public bool isVip;
     public string dishName;
     public RecipeData recipe;
     public float timeLimit;

@@ -99,15 +99,19 @@ public class GameHUD : MonoBehaviour
                 break;
 
             case GameManager.GameState.GameOver:
-                DrawCenterPanel("¡SE ACABÓ EL TIEMPO!",
-                    "Puntos: " + GameManager.Instance.GetCurrentScore() +
+                DrawCenterPanel(GameManager.Instance.WorkersWon ? "¡GANARON LOS GARZONES!" : "¡GANÓ EL IMPOSTOR!",
+                    GameManager.Instance.ResultReason + "\n\n" +
+                    "Reputación: " + GameManager.Instance.Reputation.ToString("0.0") + "/5 estrellas" +
+                    "   ·   VIP atendidos: " + GameManager.Instance.VipOrdersDelivered + "/" + GameManager.Instance.requiredVipOrders + "\n" +
+                    "Platos contaminados VIP: " + GameManager.Instance.ContaminatedVipOrders + "/2\n" +
+                    "Ventas: " + GameManager.Instance.GetCurrentScore() +
                     "   (meta: " + GameManager.Instance.targetScore + ")\n" +
                     "Ganados: +" + GameManager.Instance.PointsEarned +
                     "   ·   Penalizaciones: -" + GameManager.Instance.PointsLost + "\n" +
                     "Pedidos entregados: " + GameManager.Instance.OrdersDelivered +
                     "   ·   Clientes que se fueron sin comer: " + GameManager.Instance.OrdersLost + "\n" +
                     "Sabotajes del impostor: " + (SabotageSystem.Instance != null ? SabotageSystem.Instance.SabotageCount : 0) + "\n\n" +
-                    (GameManager.Instance.GetCurrentScore() >= GameManager.Instance.targetScore
+                    (GameManager.Instance.WorkersWon
                         ? "¡Doña Rosa está orgullosa!" : "Los caseros se fueron con hambre...") +
                     "\n\nPresiona R para volver al menú");
                 break;
@@ -137,6 +141,15 @@ public class GameHUD : MonoBehaviour
         string lostPoints = GameManager.Instance.PointsLost > 0 ? "  (-" + GameManager.Instance.PointsLost + ")" : "";
         GUI.Label(Inset(lost), "Perdidos  " + GameManager.Instance.OrdersLost + lostPoints, textStyle);
         textStyle.normal.textColor = Color.white;
+        Rect goals = new Rect(Scale(16), Scale(65), Mathf.Min(Screen.width - Scale(32), Scale(850)), Scale(42));
+        GUI.DrawTexture(goals, panelTexture);
+        var previousSize = textStyle.fontSize;
+        textStyle.fontSize = Mathf.RoundToInt(Scale(16));
+        GUI.Label(Inset(goals), "Estrellas " + GameManager.Instance.Reputation.ToString("0.0") + "/5 (meta " + GameManager.Instance.requiredReputation.ToString("0.0") +
+            ")   ·   VIP " + GameManager.Instance.VipOrdersDelivered + "/" + GameManager.Instance.requiredVipOrders +
+            "   ·   Ventas " + GameManager.Instance.GetCurrentScore() + "/" + GameManager.Instance.targetScore +
+            "   ·   Contaminados VIP " + GameManager.Instance.ContaminatedVipOrders + "/2", textStyle);
+        textStyle.fontSize = previousSize;
     }
 
     private void DrawOrders()
@@ -144,7 +157,7 @@ public class GameHUD : MonoBehaviour
         if (OrderSystem.Instance == null) return;
         var orders = OrderSystem.Instance.GetActiveOrders();
 
-        float x = Scale(16), y = Scale(72);
+        float x = Scale(16), y = Scale(120);
         if (orders.Count == 0)
         {
             Rect wait = new Rect(x, y, Scale(250), Scale(40));
@@ -196,6 +209,7 @@ public class GameHUD : MonoBehaviour
         // Mesa y segundos
         float pad = Scale(8);
         string table = order.table != null ? order.table.DisplayName : "";
+        if (order.isVip) table = "VIP · " + table;
         int seconds = Mathf.CeilToInt(Mathf.Max(0f, order.timeRemaining));
         cardStyle.alignment = TextAnchor.UpperLeft;
         cardStyle.normal.textColor = accentColor;
@@ -328,7 +342,7 @@ public class GameHUD : MonoBehaviour
 
     private void DrawCenterPanel(string title, string body)
     {
-        float w = Mathf.Min(Screen.width - Scale(32), Scale(760)), h = Scale(340);
+        float w = Mathf.Min(Screen.width - Scale(32), Scale(820)), h = Mathf.Min(Screen.height - Scale(32), Scale(460));
         Rect r = new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h);
         GUI.DrawTexture(r, panelTexture);
 

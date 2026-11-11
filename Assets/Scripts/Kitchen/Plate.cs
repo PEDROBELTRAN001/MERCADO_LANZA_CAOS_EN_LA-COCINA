@@ -14,10 +14,11 @@ public class Plate : MonoBehaviour
     // Diametro parecido al de los platos de Blender en la escena (~0.65 m)
     public const float Diameter = 0.65f;
 
-    public static Plate Create()
+    public static Plate Create(bool clean = true)
     {
         GameObject root = new GameObject("Plato limpio");
         Plate plate = root.AddComponent<Plate>();
+        plate.isDirty = !clean;
 
         GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         Destroy(visual.GetComponent<Collider>());

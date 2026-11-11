@@ -1,5 +1,7 @@
 # Mapa de flujo del jugador · Cocina de Doña Rosa
 
+Las condiciones actuales de resultado, reputación, pedidos VIP y comida salada están en [Reglas de victoria y derrota](REGLAS_VICTORIA_Y_DERROTA.md). La meta de 100 puntos indicada aquí es la cuota de ventas y debe cumplirse junto con las otras dos metas.
+
 Documentación del nivel jugable de **Mercado Lanza: Caos en la Cocina**: cómo se mueve el jugador (Tomás, el garzón) por la cocina y el comedor para cumplir un pedido, y cómo están balanceados la dificultad, el ritmo de los pedidos y los sabotajes.
 
 ![Mapa de flujo del jugador](MapaFlujoJugador.png)

@@ -24,4 +24,5 @@ MonoBehaviour:
   requiresChopping: 0
   requiresCooking: 1
   basePoints: 40
+  vipEligible: 1
   timeLimit: 75

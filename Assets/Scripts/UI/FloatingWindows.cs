@@ -84,12 +84,14 @@ public class FloatingWindows : MonoBehaviour
                    "Su misión: sabotear el fogón, ensuciar el piso y hacer que los caseros se vayan sin comer." },
         new StoryPage { title = "El Capibara-policía",
             sky = new Color(0.25f, 0.45f, 0.55f),
-            body = "El guardián del mercado patrulla los pasillos. Si Tomás junta pistas y acusa bien tres veces, el impostor será expulsado. " +
-                   "Pero cuidado: una acusación falsa hace perder tiempo valioso." },
+            body = "El guardián del mercado patrulla los pasillos. Examina el rastro del sabotaje con E y presenta la prueba al Capibara con E. " +
+                   "Si alcanza al Rival, lo suspende ocho segundos. Una denuncia sin pruebas no inicia la persecución." },
         new StoryPage { title = "Tu misión",
             sky = new Color(0.94f, 0.60f, 0.19f),
-            body = "Atiende los pedidos de las mesas antes de que se acabe el tiempo, mantén la cocina en orden " +
-                   "y no le quites el ojo a nadie.\n\n¡Doña Rosa confía en ti!" },
+            body = "Al terminar el turno necesitas al menos 3,5 estrellas, dos pedidos VIP y 100 puntos de ventas. " +
+                   "La Cholita VIP pide Plato Paceño o Api con Pastel: busca VIP en las tarjetas. " +
+                   "Pierdes si tres clientes se van, la reputación llega a cero o entregas dos platos contaminados a la VIP. " +
+                   "¡Revisa la señal SAL y tira esos platos a la basura!" },
     };
 
     private static readonly Character[] Characters =

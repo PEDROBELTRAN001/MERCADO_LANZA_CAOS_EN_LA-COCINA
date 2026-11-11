@@ -47,6 +47,10 @@ public class AssemblyStation : Interactable
 
     // La mesa de armado de la cocina (la usan las tarjetas de pedido del HUD)
     public static AssemblyStation Instance { get; private set; }
+    public bool TrySaltReadyDish()
+    {
+        return readyDish != null && readyDish.TryGetComponent(out DishItem dish) && dish.TrySalt();
+    }
 
     private void Awake()
     {
@@ -56,6 +60,21 @@ public class AssemblyStation : Interactable
     private void Start()
     {
         recipes = Resources.LoadAll<RecipeData>("Recipes");
+        if (GameManager.Instance != null) GameManager.Instance.OnGameStarted += ClearForNewRound;
+    }
+
+    private void ClearForNewRound()
+    {
+        if (plate != null) Destroy(plate.gameObject);
+        if (readyDish != null) Destroy(readyDish);
+        plate = null;
+        readyDish = null;
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null) GameManager.Instance.OnGameStarted -= ClearForNewRound;
+        if (Instance == this) Instance = null;
     }
 
     // ¿Ya esta en el plato este ingrediente, preparado como lo pide la receta?
