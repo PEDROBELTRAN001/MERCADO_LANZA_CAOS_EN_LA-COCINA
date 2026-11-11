@@ -122,7 +122,7 @@ Material:
     - roughnessFactor: 0.5
     - transmissionFactor: 0
     m_Colors:
-    - baseColorFactor: {r: 1, g: 1, b: 1, a: 0.61960787}
+    - baseColorFactor: {r: 1, g: 1, b: 1, a: 0.79607844}
     - baseColorTexture_Rotation: {r: 0, g: 0, b: 0, a: 0}
     - emissiveFactor: {r: 0, g: 0, b: 0, a: 1}
     - emissiveTexture_Rotation: {r: 0, g: 0, b: 0, a: 0}
