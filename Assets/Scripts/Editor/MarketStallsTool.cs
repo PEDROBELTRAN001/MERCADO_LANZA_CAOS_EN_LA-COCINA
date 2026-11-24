@@ -14,6 +14,9 @@ using UnityEngine.SceneManagement;
 //   PuestoFrutas.fbx) y ensaladas de frutas en los kiosko clausurado (Jose 36 y Petra 35, PuestoEnsaladas.fbx).
 // - Sector verduras (pared norte, a la derecha de las frutas): PuestoVerduras.fbx, fuente
 //   Downloads/PuestoVerdurasCompleto.blend (Juan y Diana, N 84, de 1a Calidad, Dona Carmen).
+// - Sandwiches de chorizo (Puesteishon 24, 23, 22 y 21, en fila a la izquierda del triangulo de barandas, al sur
+//   de la cocina): PuestoSandwiches.fbx, fuente Downloads/PuestoSandwiches.blend (Marlene, Dona Rosita,
+//   Dona Elsa, Don Beto).
 // Todo queda en "Puestos_Tematicos"; si ya existe se vuelve a armar. Despues guardar (Ctrl+S).
 public static class MarketStallsTool
 {
@@ -41,7 +44,16 @@ public static class MarketStallsTool
         ("Puesteishon (6)", "PuestoVerduras", "Letrero_2"),
         ("Puesteishon (5)", "PuestoVerduras", "Letrero_3"),
         ("Puesteishon (4)", "PuestoVerduras", "Letrero_4"),
+        ("Puesteishon (24)", "PuestoSandwiches", "Letrero_1"),
+        ("Puesteishon (23)", "PuestoSandwiches", "Letrero_2"),
+        ("Puesteishon (22)", "PuestoSandwiches", "Letrero_3"),
+        ("Puesteishon (21)", "PuestoSandwiches", "Letrero_4"),
     };
+
+    // Puestos en fila norte-sur junto al triangulo de barandas: la regla "mirar al centro" los giraba hacia el
+    // vecino, asi que usan el lado en que abre el modelo original (hacia el oeste). true = al reves (hacia el triangulo)
+    static readonly string[] KeepOriginalFront = { "Puesteishon (24)", "Puesteishon (23)", "Puesteishon (22)", "Puesteishon (21)" };
+    const bool FlipOriginalFront = false;
 
     // Puesto suelto (malla del .glb sin prefab) junto a las verduras; hay otro con el mismo nombre en (67, 44)
     // y los hijos de los Puesteishon se llaman igual, asi que se busca entre los objetos raiz el mas cercano
@@ -106,6 +118,10 @@ public static class MarketStallsTool
         // (los rayos no sirven: los costados del .glb tienen ventanas grandes)
         Vector3 inward = MarketCenter - center;
         inward.y = 0f;
+        // Los puestos en fila contra otros puestos abren hacia el lado original del modelo de Pedro
+        // (el techo cae hacia adelante: el frente es -y local, que tras la rotacion es -stall.up)
+        if (System.Array.IndexOf(KeepOriginalFront, stall.name) >= 0 && Horizontal(stall.up) != Vector3.zero)
+            inward = FlipOriginalFront ? Horizontal(stall.up) : -Horizontal(stall.up);
         Vector3 front = axis;
         foreach (Vector3 dir in new[] { axis, -axis, other, -other })
             if (Vector3.Dot(dir, inward) > Vector3.Dot(front, inward)) front = dir;
