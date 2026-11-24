@@ -17,6 +17,8 @@ using UnityEngine.SceneManagement;
 // - Sandwiches de chorizo (Puesteishon 24, 23, 22 y 21, en fila a la izquierda del triangulo de barandas, al sur
 //   de la cocina): PuestoSandwiches.fbx, fuente Downloads/PuestoSandwiches.blend (Marlene, Dona Rosita,
 //   Dona Elsa, Don Beto).
+// - Cafeterias (Puesteishon 18, 19 y 20, en fila junto a las 4 casetas amarillas): PuestoCafeteria.fbx, fuente
+//   Downloads/PuestoCafeteria.blend (Cafeteria AYDE, PIKOKA caseta 7, Dona Lucia), con toldo levantado y barra de madera.
 // Todo queda en "Puestos_Tematicos"; si ya existe se vuelve a armar. Despues guardar (Ctrl+S).
 public static class MarketStallsTool
 {
@@ -48,11 +50,15 @@ public static class MarketStallsTool
         ("Puesteishon (23)", "PuestoSandwiches", "Letrero_2"),
         ("Puesteishon (22)", "PuestoSandwiches", "Letrero_3"),
         ("Puesteishon (21)", "PuestoSandwiches", "Letrero_4"),
+        ("Puesteishon (18)", "PuestoCafeteria", "Letrero_1"),
+        ("Puesteishon (19)", "PuestoCafeteria", "Letrero_2"),
+        ("Puesteishon (20)", "PuestoCafeteria", "Letrero_3"),
     };
 
     // Puestos en fila norte-sur junto al triangulo de barandas: la regla "mirar al centro" los giraba hacia el
     // vecino, asi que usan el lado en que abre el modelo original (hacia el oeste). true = al reves (hacia el triangulo)
-    static readonly string[] KeepOriginalFront = { "Puesteishon (24)", "Puesteishon (23)", "Puesteishon (22)", "Puesteishon (21)" };
+    static readonly string[] KeepOriginalFront = { "Puesteishon (24)", "Puesteishon (23)", "Puesteishon (22)", "Puesteishon (21)",
+        "Puesteishon (18)", "Puesteishon (19)", "Puesteishon (20)" };
     const bool FlipOriginalFront = false;
 
     // Puesto suelto (malla del .glb sin prefab) junto a las verduras; hay otro con el mismo nombre en (67, 44)
