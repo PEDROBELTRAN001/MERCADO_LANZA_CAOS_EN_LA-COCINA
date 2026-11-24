@@ -13,7 +13,7 @@ Abrir `Assets/Scenes/KitchenScene.unity` y pulsar Play. Los nuevos sistemas se c
 
 ## Minimapa
 
-Plano completo en la zona inferior derecha, con norte fijo y proporciones reales. Se genera una vez desde las superficies de navegación conectadas al suelo del jugador: los pasillos se ven claros, y los puestos/obstáculos quedan oscuros. No necesita una cámara adicional ni renderizar el escenario cada fotograma.
+Plano completo ampliado en la zona inferior derecha, con norte fijo y proporciones reales. El panel pasa de 252 × 308 a 380 × 430 unidades de interfaz; el área del plano también aumenta y su textura pasa de 384 a 512 píxeles. Se genera una vez desde las superficies de navegación conectadas al suelo del jugador: los pasillos se ven claros, y los puestos/obstáculos quedan oscuros. No necesita una cámara adicional ni renderizar el escenario cada fotograma.
 
 Muestra a Tomás en turquesa, a los caseros con puntos discretos y a las mesas con pedidos en dorado. Los potenciadores tienen símbolos propios de hoja verde y sachet amarillo/rojo, junto con los segundos restantes. Debajo del plano se muestran las próximas apariciones, el multiplicador de velocidad y las entregas reservadas.
 
@@ -27,8 +27,8 @@ Los pregones se alternan en burbujas visibles cerca de Tomás. Acercarse y pulsa
 
 | Objeto | Aparición desde el inicio del turno | Permanencia | Efecto al pasar por encima |
 | --- | --- | --- | --- |
-| Hoja de coca | Cada 25 segundos | 5 segundos | Multiplica la velocidad actual por 1,15 durante el resto del turno. |
-| Cascadita | Cada 40 segundos | 5 segundos | Entrega automáticamente el pedido pendiente con menos tiempo restante. |
+| Hoja de coca | Cada 25 segundos | 10 segundos | Multiplica la velocidad actual por 1,15 durante el resto del turno. |
+| Cascadita | Cada 40 segundos | 10 segundos | Entrega automáticamente el pedido pendiente con menos tiempo restante. |
 
 Las ubicaciones se sortean sobre pasillos transitables, con separación de los bordes y espacio libre para recogerlos. El Rival, la IA rival y los caseros no pueden consumirlos. Una recogida solo se contabiliza una vez.
 
@@ -38,14 +38,45 @@ Cascadita utiliza las reglas de entrega existentes: suma los puntos de la receta
 
 Pausar o abrir una ventana que bloquea el juego congela los intervalos y la permanencia de los objetos. Reiniciar limpia hojas, objetos, entregas reservadas y temporizadores.
 
+## Audio y radio
+
+Los cinco sonidos suministrados se copian a `Assets/Resources/Audio` y se conectan automáticamente:
+
+| Archivo | Uso |
+| --- | --- |
+| mercado.mp3 | Ambiente en bucle continuo, también en el menú y al terminar la jornada. |
+| campana.mp3 | Cada misión/pedido nuevo. |
+| jump.mp3 | Cada potenciador recogido correctamente por Tomás. |
+| error.mp3 | Derrota; no se reproduce al ganar. |
+| radio_transicion.mp3 | Transición completa antes de cada fragmento musical. |
+
+Las canciones se colocan en **`Assets/StreamingAssets/RadioMusic`**. Ya incluye `Milo j - Ama De Mi Sol.mp3`. Se pueden añadir más MP3 antes de pulsar Play o durante una sesión: la radio vuelve a revisar la carpeta en cada ciclo. En una exportación Windows se usa `<juego>_Data/StreamingAssets/RadioMusic`.
+
+La radio comienza con la partida y se detiene cuando esta termina. Su ciclo es: transición completa → canción aleatoria desde un punto aleatorio durante 20 segundos → transición completa. Con varias canciones evita repetir inmediatamente la anterior. Si un archivo dura menos de 20 segundos, repite ese archivo hasta completar el fragmento. Solo mantiene cargada una canción y la libera al cambiarla.
+
+Radio, fondo y efectos tienen ganancias independientes. El ambiente y los efectos son 2D para que se oigan igual en ambas cámaras del multijugador local. Se mantiene una sola escucha de audio.
+
+## Menú de pausa
+
+**ESC**, **P** o el botón superior derecho abren la pausa. Los botones son **Reanudar**, **Volver a jugar** y **Volúmenes**. El reinicio conserva el modo y las preferencias de sonido, y restablece reloj, pedidos y bonificaciones.
+
+Volúmenes ofrece un interruptor de activación y un deslizador de 0 a 100 % para **Música radio**, **Fondo** y **Efectos**. Silenciar conserva el volumen elegido. Los ajustes se guardan entre sesiones. ESC vuelve desde volúmenes al menú de pausa; ESC/P en el menú principal reanudan la partida.
+
+La pausa congela las fuentes de audio, el punto de reproducción, el fragmento de radio, el reloj y los potenciadores. Abrir historia/fichas también pausa el audio. Las ventanas de fichas no se abren por detrás del menú de pausa.
+
 ## Ajustes y verificación
 
 - `CameraFollow`: `framingScale`, `turnSmoothTime`, `maxTurnSpeed`, `lookAhead` y `followWholeMarket`.
 - `MarketLife`: `pedestrianCount`; constantes `CocaInterval`, `CascaditaInterval` y `PickupLifetime`.
 - Pruebas de integración: ejecutar Unity con `-batchmode -projectPath "<ruta del proyecto>" -executeMethod MarketLifeValidation.Run -logFile Logs/market-life-validation.log`, sin `-quit`. El comprobador cierra su propia sesión al terminar y guarda el resultado en `Logs/market-life-result.txt`.
 - Las capturas de revisión se guardan en `Logs/market-life-single.png`, `Logs/market-life-reset.png` y `Logs/market-life-powerups.png`.
+- Audio/pausa: ejecutar `MarketAudioValidation.Run` del mismo modo, sin `-quit`; resultado en `Logs/market-audio-result.txt`. Capturas en `Logs/market-pause.png`, `Logs/market-volumes.png` y `Logs/market-larger-minimap.png`.
 
 ## Verificación realizada
+
+Audio, pausa y minimapa ampliado: **53 comprobaciones superadas** en Unity 6000.6.0f1. Incluyen la carga del MP3 local y su punto de inicio aleatorio, los fragmentos de veinte segundos, el retorno a la transición, la liberación de cada canción, la campana por misión, el sonido de recogida, la derrota sin falso aviso al ganar, los tres controles de volumen, la persistencia de ajustes, ESC/P, reinicio y la permanencia de diez segundos. No se registraron errores de ejecución durante estas pruebas.
+
+Se revisaron el menú de pausa, los volúmenes y el minimapa en 1280 × 720. En el segundo pase se corrigieron el título recortado y los adornos que desbordaban el panel, y se distinguieron los deslizadores con el color dorado del HUD. La leyenda norte y el pie del plano también conservan espacio para la tipografía ampliada.
 
 Compilación en Unity 6000.6.0f1 e integración en la escena original: **67 comprobaciones superadas**. Incluyen las 36 posiciones de peatones, marcha y puestos quietos, conversación, exclusión del Rival, recogida única y fuera de alcance, velocidad acumulada, apariciones, caducidad, pausa, puntuación/VIP, entregas reservadas, reinicio y giro de ambas cámaras. La comprobación del teclado confirma que mantener una tecla no provoca giros circulares.
 

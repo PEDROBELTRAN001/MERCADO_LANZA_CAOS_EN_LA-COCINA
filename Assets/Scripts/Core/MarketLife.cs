@@ -6,7 +6,7 @@ using UnityEngine;
 public class MarketLife : MonoBehaviour
 {
     public static MarketLife Instance { get; private set; }
-    public const float CocaInterval = 25f, CascaditaInterval = 40f, PickupLifetime = 5f;
+    public const float CocaInterval = 25f, CascaditaInterval = 40f, PickupLifetime = 10f;
     [Range(0, 80)] public int pedestrianCount = 36;
     public MarketLayout Layout { get; private set; }
     public PlayerController Worker => LocalMultiplayer.Instance != null ? LocalMultiplayer.Instance.Worker : null;
@@ -101,6 +101,7 @@ public class MarketLife : MonoBehaviour
         Vector3 pickupCenter = pickup.transform.position + Vector3.up * .8f;
         if (body == null || Vector3.Distance(body.ClosestPoint(pickupCenter), pickupCenter) > .7f) return false;
         pickup.Consume();
+        MarketAudio.Instance?.PlayPickup();
         if (pickup.Type == MarketPowerup.Kind.CocaLeaf)
         {
             player.CollectCocaLeaf();

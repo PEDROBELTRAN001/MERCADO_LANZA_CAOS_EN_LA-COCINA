@@ -120,7 +120,7 @@ public static class MarketLifeValidation
         Check(market.Coca == null, "La coca no aparece antes de 25 segundos");
         Set(market, "cocaTimer", 24.95f); yield return Wait(.15f);
         var coca = market.Coca;
-        Check(coca != null && coca.Available && coca.Remaining > 4.6f, "La coca aparece al completar su intervalo y dispone de cinco segundos");
+        Check(coca != null && coca.Available && coca.Remaining > 9.6f, "La coca aparece al completar su intervalo y dispone de diez segundos");
         Check(!market.TryCollect(coca, local.Rival), "El Rival no puede recoger la coca");
         Vector3 randomLocation = coca.transform.position;
         coca.transform.position = local.Worker.transform.position + Vector3.right * 15f;
@@ -138,8 +138,8 @@ public static class MarketLifeValidation
         float remaining = casc.Remaining, countdown = market.CocaCountdown;
         game.TogglePause(); yield return RealWait(.5f);
         Check(casc.Available && Mathf.Abs(casc.Remaining-remaining)<.03f && Mathf.Abs(market.CocaCountdown-countdown)<.03f, "Pausar congela la duración y los intervalos");
-        game.TogglePause(); yield return Wait(5.1f);
-        Check(casc == null || !casc.Available, "El sachet desaparece tras cinco segundos sin recogerlo");
+        game.TogglePause(); yield return Wait(10.1f);
+        Check(casc == null || !casc.Available, "El sachet desaparece tras diez segundos sin recogerlo");
         var recipe = Resources.LoadAll<RecipeData>("Recipes")[0];
         Order slow = AddOrder(orders, recipe, 0, 90f), urgent = AddOrder(orders, recipe, 1, 20f, true);
         Set(market, "cascTimer", 39.95f); yield return Wait(.15f);

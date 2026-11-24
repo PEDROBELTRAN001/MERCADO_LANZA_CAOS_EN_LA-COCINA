@@ -241,6 +241,7 @@ public class FloatingWindows : MonoBehaviour
             return;
         }
 
+        if (GameManager.Instance.CurrentState == GameManager.GameState.Paused) return;
         if (kb.f1Key.wasPressedThisFrame) Open(Page.Cards, false);
         else if (kb.f2Key.wasPressedThisFrame) Open(Page.Curriculum, false);
         else if (kb.f3Key.wasPressedThisFrame) Open(Page.Story, false);

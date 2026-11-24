@@ -21,7 +21,7 @@ public class MarketMinimap : MonoBehaviour
     private static float Cross(Vector2 a, Vector2 b, Vector2 p) => (b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
     private void BakeMap()
     {
-        const int resolution = 384;
+        const int resolution = 512;
         var pixels = new Color32[resolution * resolution];
         Color32 background = new Color(.10f, .17f, .18f), road = new Color(.63f, .69f, .65f);
         for (int i = 0; i < pixels.Length; i++) pixels[i] = background;
@@ -70,23 +70,23 @@ public class MarketMinimap : MonoBehaviour
         float s = Mathf.Clamp(Screen.height/1080f,.8f,1.25f);
         if (label == null)
         {
-            label = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            label = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft, wordWrap = false };
             small = new GUIStyle(label) { fontStyle = FontStyle.Normal };
         }
-        label.fontSize = Mathf.RoundToInt(14*s); label.normal.textColor = Color.white;
-        small.fontSize = Mathf.RoundToInt(12*s); small.normal.textColor = Color.white;
-        Rect panel = new Rect(Screen.width-270*s,Screen.height-408*s,252*s,308*s);
+        label.fontSize = Mathf.RoundToInt(18*s); label.normal.textColor = Color.white;
+        small.fontSize = Mathf.RoundToInt(15*s); small.normal.textColor = Color.white;
+        Rect panel = new Rect(Screen.width-398*s,Screen.height-530*s,380*s,430*s);
         MarketDrawing.Fill(panel,new Color(.03f,.09f,.10f,.96f));
         AndeanUI.DrawAguayo(new Rect(panel.x,panel.y,panel.width,5*s));
         GUI.Label(new Rect(panel.x+10*s,panel.y+8*s,panel.width-20*s,23*s),"MERCADO LANZA · LA PAZ",label);
-        Rect area = new Rect(panel.x+10*s,panel.y+35*s,panel.width-20*s,183*s);
+        Rect area = new Rect(panel.x+12*s,panel.y+38*s,panel.width-24*s,292*s);
         // Conserva la proporción real de las calles, sin deformar el plano.
         float ratio = bounds.size.x/bounds.size.z;
         if (area.width/area.height > ratio) { float w=area.height*ratio;area.x+=(area.width-w)*.5f;area.width=w; }
         else { float h=area.width/ratio;area.y+=(area.height-h)*.5f;area.height=h; }
         GUI.DrawTexture(area,map);
-        GUI.Label(new Rect(panel.xMax-28*s,panel.y+33*s,20*s,18*s),"N ↑",small);
-        foreach (var npc in market.Pedestrians) if (npc != null) Dot(npc.transform.position,area,new Color(.19f,.38f,.36f),3*s);
+        GUI.Label(new Rect(panel.xMax-42*s,panel.y+33*s,34*s,22*s),"N ↑",small);
+        foreach (var npc in market.Pedestrians) if (npc != null) Dot(npc.transform.position,area,new Color(.19f,.38f,.36f),4*s);
         if (OrderSystem.Instance != null)
             foreach (var table in OrderSystem.Instance.tables)
                 if (table != null) Dot(table.transform.position,area,table.hasOrder?AndeanUI.Yellow:new Color(.65f,.43f,.18f),5*s);
@@ -95,9 +95,9 @@ public class MarketMinimap : MonoBehaviour
         Matrix4x4 matrix = GUI.matrix; Color color = GUI.color;
         GUIUtility.RotateAroundPivot(market.Worker.transform.eulerAngles.y,player);
         GUI.color = new Color(.2f,1f,.86f);
-        GUI.DrawTexture(new Rect(player.x-8*s,player.y-8*s,16*s,16*s),arrow);
+        GUI.DrawTexture(new Rect(player.x-10*s,player.y-10*s,20*s,20*s),arrow);
         GUI.matrix = matrix; GUI.color = color;
-        float y = panel.y+223*s;
+        float y = panel.y+340*s;
         GUI.DrawTexture(new Rect(panel.x+10*s,y,19*s,19*s),leaf);
         string coca = market.Coca != null && market.Coca.Available ? "En pasillo · "+Mathf.CeilToInt(market.Coca.Remaining)+" s" : "Próxima · "+Mathf.CeilToInt(market.CocaCountdown)+" s";
         GUI.Label(new Rect(panel.x+33*s,y,panel.width-38*s,20*s),"Coca  "+coca,small);
@@ -105,7 +105,7 @@ public class MarketMinimap : MonoBehaviour
         string casc = market.Cascadita != null && market.Cascadita.Available ? "En pasillo · "+Mathf.CeilToInt(market.Cascadita.Remaining)+" s" : "Próxima · "+Mathf.CeilToInt(market.CascaditaCountdown)+" s";
         GUI.Label(new Rect(panel.x+33*s,y,panel.width-38*s,20*s),"Cascadita  "+casc,small);
         GUI.Label(new Rect(panel.x+10*s,y+23*s,panel.width-20*s,20*s),"Velocidad ×"+market.Worker.CocaSpeedMultiplier.ToString("0.00")+"  ·  Entregas: "+market.PendingDeliveries,small);
-        GUI.Label(new Rect(panel.x+10*s,y+42*s,panel.width-20*s,17*s),"Turquesa: tú / rumbo   Dorado: pedidos",small);
+        GUI.Label(new Rect(panel.x+10*s,y+42*s,panel.width-20*s,20*s),"Turquesa: tú / rumbo   Dorado: pedidos",small);
     }
     private void OnDestroy()
     {
