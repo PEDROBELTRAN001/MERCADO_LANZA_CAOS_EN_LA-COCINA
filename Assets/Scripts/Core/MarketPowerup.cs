@@ -81,7 +81,7 @@ public class MarketPowerup : MonoBehaviour
         if (age >= MarketLife.PickupLifetime) { Consume(); return; }
         visual.localPosition = Vector3.up * (.95f + Mathf.Sin(age * 4f + phase) * .12f);
         visual.Rotate(0, 70f * Time.deltaTime, 0, Space.World);
-        // Parpadea al agotarse los cinco segundos, tanto en el mundo como en el mapa.
+        // Parpadea al agotarse los diez segundos de permanencia.
         visual.gameObject.SetActive(Remaining > 1.5f || Mathf.Sin(age * 18f) > 0f);
         market.TryCollect(this, market.Worker);
     }

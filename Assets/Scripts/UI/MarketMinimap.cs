@@ -90,7 +90,8 @@ public class MarketMinimap : MonoBehaviour
         if (OrderSystem.Instance != null)
             foreach (var table in OrderSystem.Instance.tables)
                 if (table != null) Dot(table.transform.position,area,table.hasOrder?AndeanUI.Yellow:new Color(.65f,.43f,.18f),5*s);
-        Pickup(market.Coca,leaf,area,s); Pickup(market.Cascadita,sachet,area,s);
+        foreach (var pickup in market.CocaPickups) Pickup(pickup,leaf,area,s);
+        foreach (var pickup in market.CascaditaPickups) Pickup(pickup,sachet,area,s);
         Vector2 player = Position(market.Worker.transform.position,area);
         Matrix4x4 matrix = GUI.matrix; Color color = GUI.color;
         GUIUtility.RotateAroundPivot(market.Worker.transform.eulerAngles.y,player);

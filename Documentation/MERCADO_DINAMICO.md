@@ -25,10 +25,14 @@ Los pregones se alternan en burbujas visibles cerca de Tomás. Acercarse y pulsa
 
 ## Potenciadores exclusivos de Tomás
 
-| Objeto | Aparición desde el inicio del turno | Permanencia | Efecto al pasar por encima |
+| Objeto | Espera inicial y entre tandas | Permanencia | Efecto al pasar por encima |
 | --- | --- | --- | --- |
-| Hoja de coca | Cada 25 segundos | 10 segundos | Multiplica la velocidad actual por 1,15 durante el resto del turno. |
-| Cascadita | Cada 40 segundos | 10 segundos | Entrega automáticamente el pedido pendiente con menos tiempo restante. |
+| Hoja de coca | 20 segundos | 10 segundos | Multiplica la velocidad actual por 1,15 durante el resto del turno. |
+| Cascadita | 20 segundos | 10 segundos | Entrega automáticamente el pedido pendiente con menos tiempo restante. |
+
+Cada tanda crea **tres copias de cada tipo** en pasillos aleatorios y separados. Las seis ubicaciones se muestran en el minimapa. Todas las copias de una tanda aparecen a la vez y cada una se puede recoger por separado; recoger una no elimina las otras.
+
+Cada tipo espera veinte segundos al empezar. Cuando desaparece su última copia, por recogida o al completar los diez segundos, comienza una nueva espera de veinte segundos. Si nadie las recoge, el ciclo es: 20 segundos de espera → 10 segundos visibles → 20 segundos de espera → nueva tanda. Los dos tipos mantienen sus propios temporizadores, de modo que recoger las tres hojas antes de que caduquen no adelanta Cascadita.
 
 Las ubicaciones se sortean sobre pasillos transitables, con separación de los bordes y espacio libre para recogerlos. El Rival, la IA rival y los caseros no pueden consumirlos. Una recogida solo se contabiliza una vez.
 
@@ -71,8 +75,11 @@ La pausa congela las fuentes de audio, el punto de reproducción, el fragmento d
 - Pruebas de integración: ejecutar Unity con `-batchmode -projectPath "<ruta del proyecto>" -executeMethod MarketLifeValidation.Run -logFile Logs/market-life-validation.log`, sin `-quit`. El comprobador cierra su propia sesión al terminar y guarda el resultado en `Logs/market-life-result.txt`.
 - Las capturas de revisión se guardan en `Logs/market-life-single.png`, `Logs/market-life-reset.png` y `Logs/market-life-powerups.png`.
 - Audio/pausa: ejecutar `MarketAudioValidation.Run` del mismo modo, sin `-quit`; resultado en `Logs/market-audio-result.txt`. Capturas en `Logs/market-pause.png`, `Logs/market-volumes.png` y `Logs/market-larger-minimap.png`.
+- Tandas de tres: ejecutar `MarketPowerupBatchValidation.Run`; resultado en `Logs/market-powerup-batch-result.txt` y captura de los seis marcadores en `Logs/market-three-powerups.png`. Incluye la regresión del mercado existente.
 
 ## Verificación realizada
+
+Tandas de tres: **55 comprobaciones nuevas y 67 de regresión superadas**. Se verificaron las seis ubicaciones distintas y transitables, el comienzo simultáneo, los diez segundos de permanencia, los veinte segundos completos sin reemplazos, la pausa, la recogida independiente, el reinicio y los nuevos sorteos. La captura `Logs/market-three-powerups.png` muestra los tres símbolos de cada tipo en el minimapa.
 
 Audio, pausa y minimapa ampliado: **53 comprobaciones superadas** en Unity 6000.6.0f1. Incluyen la carga del MP3 local y su punto de inicio aleatorio, los fragmentos de veinte segundos, el retorno a la transición, la liberación de cada canción, la campana por misión, el sonido de recogida, la derrota sin falso aviso al ganar, los tres controles de volumen, la persistencia de ajustes, ESC/P, reinicio y la permanencia de diez segundos. No se registraron errores de ejecución durante estas pruebas.
 

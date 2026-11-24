@@ -112,11 +112,11 @@ public static class MarketAudioValidation
         Check(Mathf.Abs(audio.RadioSource.time-audio.SegmentStart-.3f)<.7f,"La canción comienza en el punto seleccionado");
         typeof(OrderSystem).GetMethod("GenerateNewOrder",Private).Invoke(orders,null);
         Check(orders.GetActiveOrders().Count>0 && audio.MissionSource.isPlaying,"Cada misión nueva reproduce la campana");
-        Set(market,"cocaTimer",24.95f);yield return Wait(.2f);
+        Set(market,"cocaTimer",19.95f);yield return Wait(.2f);
         var coca=market.Coca;Check(coca!=null,"Aparece una hoja para comprobar el efecto de recogida");
         coca.transform.position=new Vector3(worker.transform.position.x,worker.GetComponent<Collider>().bounds.min.y,worker.transform.position.z);
         Physics.SyncTransforms();Check(market.TryCollect(coca,worker) && audio.PickupSource.isPlaying,"Recoger un potenciador reproduce jump");
-        Set(market,"cascTimer",39.95f);yield return Wait(.2f);var casc=market.Cascadita;
+        Set(market,"cascTimer",19.95f);yield return Wait(.2f);var casc=market.Cascadita;
         Check(casc!=null && casc.Remaining>9.5f,"Cascadita también comienza con diez segundos");
         yield return Wait(5.1f);Check(casc!=null && casc.Available,"El potenciador permanece después de los cinco segundos anteriores");
         Key(menu,UnityEngine.InputSystem.Key.Escape);yield return Wait(.2f);
