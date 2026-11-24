@@ -13,7 +13,7 @@ public class MarketPedestrian : Interactable
         "¡Buen día, caserito! En el Lanza nos conocemos todos. Lleva los platos a tiempo y los clientes volverán contentos.",
         "Mi puesto abre tempranito. Aquí el api con pastel nunca falta. Mira las comandas: las mesas VIP cuentan mucho para la jornada.",
         "¿Vas al comedor? Sigue los pasillos y mira tu mapa. Las marcas doradas son mesas con pedidos pendientes.",
-        "Dicen que aparecen hojitas de coca en los pasillos. Cada una te da un 15 % más de velocidad durante este turno. ¡Solo duran cinco segundos!",
+        "Dicen que aparecen hojitas de coca en los pasillos. Cada una te da un 15 % más de velocidad durante este turno. ¡Solo duran diez segundos!",
         "Si encuentras un sachet Cascadita, recógelo rapidito. Entrega automáticamente el pedido más urgente, o guarda una entrega para el siguiente.",
         "¡No dejes que te arruinen la sazón! Si ves rastros de sabotaje, examínalos y avisa al Capibara con tu evidencia.",
         "Antes de salir de La Paz, prueba una marraqueta con quesito. ¡Ese sí es un desayuno de casero!",

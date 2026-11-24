@@ -6,16 +6,21 @@ using UnityEngine;
 public class MarketLife : MonoBehaviour
 {
     public static MarketLife Instance { get; private set; }
-    public const float CocaInterval = 25f, CascaditaInterval = 40f, PickupLifetime = 5f;
+    public const float CocaInterval = 20f, CascaditaInterval = 20f, PickupLifetime = 10f;
+    public const int CopiesPerSpawn = 3;
     [Range(0, 80)] public int pedestrianCount = 36;
     public MarketLayout Layout { get; private set; }
     public PlayerController Worker => LocalMultiplayer.Instance != null ? LocalMultiplayer.Instance.Worker : null;
     public List<MarketPedestrian> Pedestrians { get; } = new List<MarketPedestrian>();
-    public MarketPowerup Coca { get; private set; }
-    public MarketPowerup Cascadita { get; private set; }
+    private readonly List<MarketPowerup> cocaPickups = new List<MarketPowerup>();
+    private readonly List<MarketPowerup> cascadiPickups = new List<MarketPowerup>();
+    public IReadOnlyList<MarketPowerup> CocaPickups => cocaPickups;
+    public IReadOnlyList<MarketPowerup> CascaditaPickups => cascadiPickups;
+    public MarketPowerup Coca => FirstAvailable(cocaPickups);
+    public MarketPowerup Cascadita => FirstAvailable(cascadiPickups);
     public int PendingDeliveries { get; private set; }
-    public float CocaCountdown => Mathf.Max(0f, CocaInterval - cocaTimer);
-    public float CascaditaCountdown => Mathf.Max(0f, CascaditaInterval - cascTimer);
+    public float CocaCountdown => Coca != null ? 0f : Mathf.Max(0f, CocaInterval - cocaTimer);
+    public float CascaditaCountdown => Cascadita != null ? 0f : Mathf.Max(0f, CascaditaInterval - cascTimer);
     private float cocaTimer, cascTimer;
     private Transform population;
     private MarketNavigation navigation;
@@ -78,16 +83,55 @@ public class MarketLife : MonoBehaviour
     private void Update()
     {
         if (!PlayerController.GameplayActive) return;
-        cocaTimer += Time.deltaTime; cascTimer += Time.deltaTime;
-        if (Layout == null) return;
-        if (cocaTimer >= CocaInterval) { cocaTimer -= CocaInterval; Coca = Spawn(MarketPowerup.Kind.CocaLeaf); }
-        if (cascTimer >= CascaditaInterval) { cascTimer -= CascaditaInterval; Cascadita = Spawn(MarketPowerup.Kind.Cascadita); }
+        if (Layout == null) { cocaTimer += Time.deltaTime; cascTimer += Time.deltaTime; return; }
+        TickPickups(cocaPickups, cascadiPickups, MarketPowerup.Kind.CocaLeaf, ref cocaTimer, CocaInterval);
+        TickPickups(cascadiPickups, cocaPickups, MarketPowerup.Kind.Cascadita, ref cascTimer, CascaditaInterval);
         if (PendingDeliveries > 0 && OrderSystem.Instance != null && OrderSystem.Instance.DeliverMostUrgentAutomatically())
             PendingDeliveries--;
     }
-    private MarketPowerup Spawn(MarketPowerup.Kind kind)
+    private static MarketPowerup FirstAvailable(List<MarketPowerup> pickups)
     {
-        if (!Layout.TryRandomPoint(out Vector3 point)) return null;
+        foreach (var pickup in pickups) if (pickup != null && pickup.Available) return pickup;
+        return null;
+    }
+    private void TickPickups(List<MarketPowerup> pickups, List<MarketPowerup> other,
+        MarketPowerup.Kind kind, ref float timer, float interval)
+    {
+        if (pickups.Count > 0)
+        {
+            pickups.RemoveAll(p => p == null || !p.Available);
+            if (pickups.Count > 0) return;
+            // La espera comienza cuando ya no queda ninguna copia de esta tanda.
+            timer = 0f;
+        }
+        timer += Time.deltaTime;
+        if (timer < interval) return;
+        if (SpawnBatch(pickups, other, kind)) timer = 0f;
+        else timer = interval - 1f;
+    }
+    private bool SpawnBatch(List<MarketPowerup> pickups, List<MarketPowerup> other, MarketPowerup.Kind kind)
+    {
+        var positions = new List<Vector3>(CopiesPerSpawn);
+        for (int attempt = 0; attempt < 120 && positions.Count < CopiesPerSpawn; attempt++)
+        {
+            if (!Layout.TryRandomPoint(out Vector3 point)) continue;
+            if (Worker != null && Vector3.Distance(point, Worker.transform.position) < 2.2f) continue;
+            // Distribuir las tres opciones por distintos tramos y evitar superponer tipos.
+            float spacing = attempt < 90 ? 8f : 1.5f;
+            bool free = true;
+            foreach (var previous in positions)
+                if (Vector3.Distance(point, previous) < spacing) { free = false; break; }
+            foreach (var existing in other)
+                if (existing != null && existing.Available && Vector3.Distance(point, existing.transform.position) < 4f)
+                { free = false; break; }
+            if (free) positions.Add(point);
+        }
+        if (positions.Count != CopiesPerSpawn) return false;
+        foreach (Vector3 point in positions) pickups.Add(Spawn(kind, point));
+        return true;
+    }
+    private MarketPowerup Spawn(MarketPowerup.Kind kind, Vector3 point)
+    {
         var root = new GameObject(kind == MarketPowerup.Kind.CocaLeaf ? "Hoja de coca" : "Cascadita");
         root.transform.SetParent(transform, false); root.transform.position = point;
         var pickup = root.AddComponent<MarketPowerup>(); pickup.Initialize(this, kind);
@@ -101,6 +145,7 @@ public class MarketLife : MonoBehaviour
         Vector3 pickupCenter = pickup.transform.position + Vector3.up * .8f;
         if (body == null || Vector3.Distance(body.ClosestPoint(pickupCenter), pickupCenter) > .7f) return false;
         pickup.Consume();
+        MarketAudio.Instance?.PlayPickup();
         if (pickup.Type == MarketPowerup.Kind.CocaLeaf)
         {
             player.CollectCocaLeaf();
@@ -116,8 +161,9 @@ public class MarketLife : MonoBehaviour
     public void ResetRound()
     {
         cocaTimer = cascTimer = 0f; PendingDeliveries = 0;
-        if (Coca != null) { Coca.Consume(); Coca = null; }
-        if (Cascadita != null) { Cascadita.Consume(); Cascadita = null; }
+        foreach (var pickup in cocaPickups) if (pickup != null) pickup.Consume();
+        foreach (var pickup in cascadiPickups) if (pickup != null) pickup.Consume();
+        cocaPickups.Clear(); cascadiPickups.Clear();
         Worker?.ResetMarketBoosts();
         foreach (var actor in Pedestrians) if (actor != null) actor.ResetForRound();
     }

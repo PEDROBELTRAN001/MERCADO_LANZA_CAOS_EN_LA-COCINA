@@ -1,0 +1,10 @@
+RADIO DEL MERCADO LANZA
+
+Coloca aquí tus canciones en formato .mp3. Se incluye Milo j - Ama De Mi Sol.mp3.
+
+La radio elige una canción al azar y reproduce 20 segundos desde un punto aleatorio.
+Entre fragmentos reproduce radio_transicion.mp3, que se guarda por separado en Resources/Audio.
+Puedes añadir más canciones antes de pulsar Play. La carpeta se revisa también en cada ciclo.
+
+En el juego exportado para Windows, esta carpeta está en <nombre>_Data/StreamingAssets/RadioMusic.
+Usa ESC o P para pausar; Volúmenes permite activar, desactivar y ajustar radio, fondo y efectos.

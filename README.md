@@ -257,4 +257,4 @@ Abrir `Assets/Scenes/KitchenScene.unity` y pulsar Play. Descargar los recursos c
 
 [Guía de uso y alcance](Documentation/MENU_Y_MODOS_PRESENTACION_3.md) · [Pruebas](Documentation/PRUEBAS_MENU_Y_CAPIBARA.md)
 
-[Cámara dinámica, minimapa, caseros y potenciadores](Documentation/MERCADO_DINAMICO.md): integración automática al pulsar Play en `KitchenScene`, con hoja de coca cada 25 segundos y Cascadita cada 40 segundos.
+[Cámara dinámica, minimapa, caseros y potenciadores](Documentation/MERCADO_DINAMICO.md): integración automática al pulsar Play en `KitchenScene`, con tres copias de cada potenciador, diez segundos de permanencia y veinte segundos de espera entre tandas.
