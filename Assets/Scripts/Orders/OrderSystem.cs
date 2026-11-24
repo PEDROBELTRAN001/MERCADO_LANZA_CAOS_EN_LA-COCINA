@@ -208,6 +208,22 @@ public class OrderSystem : MonoBehaviour
         GameManager.Instance.RegisterContaminatedDelivery(order.isVip);
     }
 
+    // Cascadita conserva puntos, reputación, VIP y bonificación de una entrega normal.
+    public bool DeliverMostUrgentAutomatically()
+    {
+        if (!PlayerController.GameplayActive || activeOrders.Count == 0) return false;
+        Order selected = activeOrders[0];
+        foreach (Order order in activeOrders)
+            if (order.timeRemaining < selected.timeRemaining) selected = order;
+        if (selected.recipe == null || selected.table == null) return false;
+        string dishName = selected.dishName;
+        GameManager.Instance.AddScore(selected.recipe.basePoints);
+        selected.table.ClearOrder();
+        CompleteOrder(selected);
+        GameHUD.Notify("¡Cascadita entregó " + dishName + " automáticamente!", 4f);
+        return true;
+    }
+
     private FoodCourtTable GetFreeTable()
     {
         foreach (FoodCourtTable table in tables)

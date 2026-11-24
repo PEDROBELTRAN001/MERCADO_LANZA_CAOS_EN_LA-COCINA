@@ -42,6 +42,13 @@ public class PlayerController : MonoBehaviour
         }
     }
     private Vector3 aiMovement;
+    private Vector2 previousInput;
+    private Quaternion movementFrame = Quaternion.identity;
+    public Vector3 MovementDirection => moveDirection;
+    public int CocaLeaves { get; private set; }
+    public float CocaSpeedMultiplier => Mathf.Pow(1.15f, CocaLeaves);
+    public void CollectCocaLeaf() { CocaLeaves++; }
+    public void ResetMarketBoosts() { CocaLeaves = 0; previousInput = Vector2.zero; }
     public static bool GameplayActive => GameManager.Instance != null && GameManager.Instance.CurrentState == GameManager.GameState.Playing && Time.timeScale > 0 && !FloatingWindows.BlocksInput;
     public string InteractionKey => controls == LocalControls.IJKL ? "O" : "E";
     public bool SprintHeld => !usesAI && Keyboard.current != null && (controls == LocalControls.WASD ? Keyboard.current.leftShiftKey.isPressed : Keyboard.current.rightShiftKey.isPressed);
@@ -131,19 +138,16 @@ public class PlayerController : MonoBehaviour
         if (input.magnitude > 0.1f)
         {
             Camera reference=viewCamera!=null?viewCamera:Camera.main;
-            Vector3 forward = reference!=null?reference.transform.forward:Vector3.forward;
-            Vector3 right = reference!=null?reference.transform.right:Vector3.right;
-            forward.y = 0f;
-            right.y = 0f;
-            forward.Normalize();
-            right.Normalize();
-
-            moveDirection = (forward * input.y + right * input.x).normalized;
+            // El giro de cámara no debe convertir un paso lateral sostenido en círculos.
+            if (input != previousInput)
+                movementFrame = Quaternion.Euler(0f, reference != null ? reference.transform.eulerAngles.y : 0f, 0f);
+            moveDirection = movementFrame * new Vector3(input.x, 0f, input.y).normalized;
         }
         else
         {
             moveDirection = Vector3.zero;
         }
+        previousInput = input;
     }
 
     private void UpdateAnimation()
@@ -159,6 +163,7 @@ public class PlayerController : MonoBehaviour
     private void ApplyMovementAndRotation()
     {
         // 1. Rotación instantánea
+        if (rb == null) return;
         if (moveDirection != Vector3.zero)
         {
             rb.MoveRotation(Quaternion.LookRotation(moveDirection));
@@ -166,7 +171,7 @@ public class PlayerController : MonoBehaviour
 
         // 2. Aplicar velocidad física recta
         if(IsDetained || rb.isKinematic)return;
-        Vector3 velocity = GameplayActive ? moveDirection * moveSpeed * (SprintHeld ? sprintMultiplier : 1f) : Vector3.zero;
+        Vector3 velocity = GameplayActive ? moveDirection * moveSpeed * CocaSpeedMultiplier * (SprintHeld ? sprintMultiplier : 1f) : Vector3.zero;
         velocity.y = rb.linearVelocity.y; // Mantener la gravedad
         rb.linearVelocity = velocity;
     }
@@ -218,6 +223,7 @@ public class PlayerController : MonoBehaviour
         if(rb==null)rb=GetComponent<Rigidbody>();
         if(rb!=null){rb.position=position;rb.linearVelocity=Vector3.zero;rb.angularVelocity=Vector3.zero;}
         moveDirection=aiMovement=Vector3.zero;
+        previousInput=Vector2.zero;
         if(currentInteractable!=null)currentInteractable.HidePrompt();currentInteractable=null;
     }
 }

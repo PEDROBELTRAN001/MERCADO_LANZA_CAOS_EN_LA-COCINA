@@ -256,3 +256,5 @@ Integración preparada sobre `presentacion_3`, conservando el mapa, los diseños
 Abrir `Assets/Scenes/KitchenScene.unity` y pulsar Play. Descargar los recursos con Git LFS (`git lfs pull`).
 
 [Guía de uso y alcance](Documentation/MENU_Y_MODOS_PRESENTACION_3.md) · [Pruebas](Documentation/PRUEBAS_MENU_Y_CAPIBARA.md)
+
+[Cámara dinámica, minimapa, caseros y potenciadores](Documentation/MERCADO_DINAMICO.md): integración automática al pulsar Play en `KitchenScene`, con hoja de coca cada 25 segundos y Cascadita cada 40 segundos.

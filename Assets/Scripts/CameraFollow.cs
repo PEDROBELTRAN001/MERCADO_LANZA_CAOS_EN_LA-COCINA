@@ -28,11 +28,23 @@ public class CameraFollow : MonoBehaviour
     public float maxZoom = 15f;
     public float startZoom = 8f;
 
+    [Header("Seguimiento dinámico del mercado")]
+    [Range(0.4f, 1f)] public float framingScale = 0.70f;
+    public bool followWholeMarket = true;
+    public float turnSmoothTime = 0.65f;
+    public float maxTurnSpeed = 100f;
+    public float lookAhead = 0.8f;
+    public float focusHeight = 0.6f;
+
     private Camera cam;
     private float targetZoom;
     private float targetPitchX;
     private Vector3 currentTargetOffset;
     private bool isOverriddenByContext = false;
+    private PlayerController actor;
+    private Vector3 smoothFocus;
+    private float yaw, yawVelocity, distance;
+    private float MinimumGameplayZoom => Mathf.Max(2.8f, minZoom * framingScale);
 
     private void Awake()
     {
@@ -48,7 +60,7 @@ public class CameraFollow : MonoBehaviour
     {
         cam = GetComponent<Camera>();
 
-        targetZoom = Mathf.Clamp(startZoom, minZoom, maxZoom);
+        targetZoom = Mathf.Clamp(startZoom * framingScale, MinimumGameplayZoom, maxZoom);
         targetPitchX = defaultPitchX;
         currentTargetOffset = offset;
 
@@ -71,51 +83,63 @@ public class CameraFollow : MonoBehaviour
                 Debug.LogWarning("CameraFollow: No se encontró un objeto con el Tag 'Player'.");
             }
         }
+        actor = target != null ? target.GetComponent<PlayerController>() : null;
+        yaw = transform.eulerAngles.y;
+        distance = offset.magnitude * framingScale;
+        if (target != null) smoothFocus = target.position + Vector3.up * focusHeight;
     }
 
     private void Update()
     {
-        if (cam == null || !cam.orthographic || Mouse.current == null) return;
+        if (!PlayerController.GameplayActive || cam == null || !cam.orthographic || Mouse.current == null) return;
 
         float scroll = Mouse.current.scroll.ReadValue().y;
         if (Mathf.Abs(scroll) > 0.01f)
         {
             isOverriddenByContext = false;
-            targetZoom = Mathf.Clamp(targetZoom - Mathf.Sign(scroll) * zoomStep, minZoom, maxZoom);
+            targetZoom = Mathf.Clamp(targetZoom - Mathf.Sign(scroll) * zoomStep, MinimumGameplayZoom, maxZoom);
         }
     }
 
     private void LateUpdate()
     {
-        // 1. Suavizado del Zoom
+        if (target == null) return;
+        if (actor == null || actor.transform != target) actor = target.GetComponent<PlayerController>();
+        float dt = Time.deltaTime;
+        Vector3 motion = actor != null && PlayerController.GameplayActive ? actor.MovementDirection : Vector3.zero;
+        if (motion.sqrMagnitude > 0.01f)
+            yaw = Mathf.SmoothDampAngle(yaw, Mathf.Atan2(motion.x, motion.z) * Mathf.Rad2Deg,
+                ref yawVelocity, turnSmoothTime, maxTurnSpeed, dt);
+
+        // Acerca el encuadre; al correr deja un poco más de camino visible.
         if (cam != null && cam.orthographic)
         {
-            cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetZoom, zoomSmoothSpeed * Time.deltaTime);
+            float runningRoom = actor != null && actor.SprintHeld && motion.sqrMagnitude > 0.01f ? 0.5f : 0f;
+            cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetZoom + runningRoom, 1f - Mathf.Exp(-zoomSmoothSpeed * dt));
         }
 
         // 2. Suavizado de la inclinación en X
-        Quaternion targetRot = Quaternion.Euler(targetPitchX, 0f, 0f);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSmoothSpeed * Time.deltaTime);
+        Quaternion targetRot = Quaternion.Euler(targetPitchX, yaw, 0f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 1f - Mathf.Exp(-rotationSmoothSpeed * dt));
 
         // 3. Seguimiento suave del objetivo
-        if (target == null) return;
-
-        Vector3 focus = target.position;
-        if (useBounds)
+        Vector3 focus = target.position + Vector3.up * focusHeight + motion * lookAhead;
+        if (useBounds && !followWholeMarket)
         {
             focus.x = Mathf.Clamp(focus.x, minXZ.x, maxXZ.x);
             focus.z = Mathf.Clamp(focus.z, minXZ.y, maxXZ.y);
         }
 
-        Vector3 desiredPosition = focus + currentTargetOffset;
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
+        smoothFocus = Vector3.Lerp(smoothFocus, focus, 1f - Mathf.Exp(-smoothSpeed * dt));
+        distance = Mathf.Lerp(distance, currentTargetOffset.magnitude * framingScale, 1f - Mathf.Exp(-zoomSmoothSpeed * dt));
+        transform.position = smoothFocus - transform.forward * distance;
     }
 
     // --- Métodos contextuales llamados por CameraZoomTrigger ---
 
     public void SetContextView(float zoom, float pitchX, Vector3 customOffset)
     {
-        targetZoom = Mathf.Clamp(zoom, minZoom, maxZoom);
+        targetZoom = Mathf.Clamp(zoom * framingScale, MinimumGameplayZoom, maxZoom);
         targetPitchX = pitchX;
         currentTargetOffset = customOffset;
         isOverriddenByContext = true;
@@ -125,7 +149,7 @@ public class CameraFollow : MonoBehaviour
     {
         if (isOverriddenByContext)
         {
-            targetZoom = startZoom;
+            targetZoom = Mathf.Clamp(startZoom * framingScale, MinimumGameplayZoom, maxZoom);
             targetPitchX = defaultPitchX;
             currentTargetOffset = offset;
             isOverriddenByContext = false;
@@ -135,5 +159,6 @@ public class CameraFollow : MonoBehaviour
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
+        actor = target != null ? target.GetComponent<PlayerController>() : null;
     }
 }
