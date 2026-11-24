@@ -19,8 +19,30 @@ public class MarketPedestrian : Interactable
         "Antes de salir de La Paz, prueba una marraqueta con quesito. ¡Ese sí es un desayuno de casero!",
         "Los mejores encuentros son aquí, entre los puestos. Mi comadre viene por verduras y siempre termina almorzando con nosotros." };
 
+    // Capibaras del mercado (modelo de Blender): uno de cada 9 caseros, con sus propios pregones y charla
+    private static readonly string[] CapybaraNames = { "Capibara Pancho", "Capibara Lola", "Capibara Chino", "Capibara Rosita" };
+    private static readonly string[] CapybaraCalls = { "¡Prrr!", "¡Ñam, pastito fresco!", "¡Pip pip!", "Zzz... ¿ya es hora de almorzar?" };
+    private static readonly string[] CapybaraTalks = {
+        "Soy el capibara más tranquilo del Lanza. Dicen que aquí hasta el Rival se calma si me mira un ratito.",
+        "Me gusta pasear entre los puestos: el de las flores huele rico y el de las frutas me regala cáscaras.",
+        "Cuidado con los sabotajes, caserito. Yo vi pasar a alguien sospechoso cerca de las hornallas. ¡Prrr!",
+        "Si ves un charco de aceite, rodéalo. Yo ya me resbalé dos veces y no fue nada divertido." };
+    public static bool IsCapybara(int index) => index % 9 == 4;
+
+    // Perritos del mercado (Jack Russell de Blender): otro de cada 9 caseros
+    private static readonly string[] DogNames = { "Perrito Canelo", "Perrita Chuspa", "Perrito Tunari", "Perrita Pelusa" };
+    private static readonly string[] DogCalls = { "¡Guau guau!", "¡Guau!", "¡Arf, arf!", "¡Grrr... guau!" };
+    private static readonly string[] DogTalks = {
+        "¡Guau! Me escapé de la casa de Doña Rosa porque aquí huele a api con pastel. ¡No le digas a nadie!",
+        "Los perritos del Lanza conocemos todos los puestos. El de los peluches me da miedo: ¡son muchísimos y no se mueven!",
+        "Guau, guau. Si ves a alguien raro cerca de las hornallas, ¡ladra fuerte y avisa al Capibara policía!",
+        "Hoy ya me comí media marraqueta. Nadie se dio cuenta... ¿o sí? ¡Guau!" };
+    public static bool IsDog(int index) => index % 9 == 7;
+
     public NavMeshAgent Agent { get; private set; }
     public bool Stationary { get; private set; }
+    private bool capybara, dog;
+    private float bubbleHeight = 2.25f;
     private MarketLife market;
     private MarketNavigation navigation;
     private Vector3 home;
@@ -32,24 +54,52 @@ public class MarketPedestrian : Interactable
     public void Initialize(MarketLife owner, MarketNavigation nav, int index)
     {
         market = owner; navigation = nav; home = transform.position; personality = index;
-        displayName = Names[index % Names.Length]; interactionPrompt = "E · Conversar";
+        capybara = IsCapybara(index); dog = IsDog(index);
+        bool pet = capybara || dog;
+        displayName = capybara ? CapybaraNames[(index / 9) % CapybaraNames.Length]
+            : dog ? DogNames[(index / 9) % DogNames.Length] : Names[index % Names.Length];
+        interactionPrompt = "E · Conversar";
         int interactable = LayerMask.NameToLayer("Interactable");
         gameObject.layer = interactable >= 0 ? interactable : 0;
         var collider = gameObject.AddComponent<CapsuleCollider>();
-        collider.center = Vector3.up; collider.height = 2f; collider.radius = .38f; collider.isTrigger = true;
+        collider.center = pet ? Vector3.up * .5f : Vector3.up; collider.height = pet ? 1f : 2f;
+        collider.radius = pet ? .5f : .38f; collider.isTrigger = true;
         Stationary = index % 6 == 0;
         Agent = gameObject.AddComponent<NavMeshAgent>();
-        Agent.agentTypeID = nav.AgentType; Agent.radius = .35f; Agent.height = 1.85f;
-        Agent.speed = Random.Range(1f, 1.9f); Agent.angularSpeed = 160f;
+        Agent.agentTypeID = nav.AgentType; Agent.radius = pet ? .4f : .35f; Agent.height = pet ? 1f : 1.85f;
+        Agent.speed = capybara ? Random.Range(.8f, 1.4f) : dog ? Random.Range(1.4f, 2.2f) : Random.Range(1f, 1.9f); Agent.angularSpeed = 160f;
         Agent.acceleration = 5f; Agent.stoppingDistance = .25f;
         Agent.avoidancePriority = 30 + index % 40; Agent.autoBraking = true;
         Agent.Warp(home);
-        var catalog = Resources.Load<CharacterSkinCatalog>("MenuIntegration/CharacterSkins");
-        GameObject prefab = catalog != null ? catalog.Model(index % 2 == 0 ? 3 : 2) : null;
+        if (capybara && TryAddPet("Characters/CapibaraCasero", .85f, 1.05f)) { FinishInitialize(); return; }
+        if (dog && TryAddPet("Characters/PerritoCasero", .7f, .85f)) { FinishInitialize(); return; }
+        capybara = dog = false;
+        // Cholitas modeladas en Blender (las mismas de las apariencias); si faltan, las del catalogo
+        GameObject prefab = Resources.Load<GameObject>(index % 2 == 0 ? "Characters/CholitaPacena" : "Characters/DonaRosa");
+        bool blender = prefab != null;
+        if (!blender)
+        {
+            var catalog = Resources.Load<CharacterSkinCatalog>("MenuIntegration/CharacterSkins");
+            prefab = catalog != null ? catalog.Model(index % 2 == 0 ? 3 : 2) : null;
+        }
         if (prefab != null)
         {
             var visual = Instantiate(prefab, transform);
             visual.name = "Casero del mercado";
+            if (blender)
+            {
+                // Que mire hacia donde camina (los ojos al frente)
+                var eyes = visual.transform.Find("Ojos");
+                var parts = visual.GetComponentsInChildren<Renderer>();
+                if (eyes != null && parts.Length > 0)
+                {
+                    Bounds all = parts[0].bounds;
+                    foreach (var part in parts) all.Encapsulate(part.bounds);
+                    var eyesRenderer = eyes.GetComponent<Renderer>();
+                    Vector3 eyesCenter = eyesRenderer != null ? eyesRenderer.bounds.center : eyes.position;
+                    if (Vector3.Dot(eyesCenter - all.center, transform.forward) < 0f) visual.transform.Rotate(0f, 180f, 0f, Space.World);
+                }
+            }
             foreach (var body in visual.GetComponentsInChildren<Collider>(true)) body.enabled = false;
             var renderers = visual.GetComponentsInChildren<Renderer>();
             if (renderers.Length > 0)
@@ -60,7 +110,7 @@ public class MarketPedestrian : Interactable
                 tint.SetColor("_BaseColor", clothes[index % clothes.Length]);
                 tint.SetColor("_Color", clothes[index % clothes.Length]);
                 foreach (var renderer in renderers)
-                    if (renderer.name.StartsWith("Pollera") || renderer.name.StartsWith("Shirt") || renderer.name.StartsWith("Sleeve"))
+                    if (renderer.name.StartsWith("Pollera") || renderer.name.StartsWith("Shirt") || renderer.name.StartsWith("Sleeve") || renderer.name.StartsWith("Blusa"))
                         renderer.SetPropertyBlock(tint);
                 Bounds bounds = renderers[0].bounds;
                 foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
@@ -71,8 +121,42 @@ public class MarketPedestrian : Interactable
             }
             visual.GetComponentInChildren<CharacterVisualRig>()?.BindAgent(Agent);
         }
+        FinishInitialize();
+    }
+    private void FinishInitialize()
+    {
         ResetForRound();
         transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
+    }
+
+    // Mascota del mercado (CapibaraCasero.fbx o PerritoCasero.fbx, de Blender): un cuerpo y un cubito
+    // "MarcadorFrente" dibujado delante del hocico, que sirve para saber hacia donde mira despues de importarlo
+    private bool TryAddPet(string resource, float minHeight, float maxHeight)
+    {
+        var prefab = Resources.Load<GameObject>(resource);
+        if (prefab == null) return false;
+        var visual = Instantiate(prefab, transform);
+        visual.name = dog ? "Perrito del mercado" : "Capibara del mercado";
+        foreach (var body in visual.GetComponentsInChildren<Collider>(true)) body.enabled = false;
+
+        Vector3 markerPoint = Vector3.zero;
+        bool hasMarker = false;
+        foreach (var renderer in visual.GetComponentsInChildren<Renderer>(true))
+            if (renderer.name == "MarcadorFrente") { markerPoint = renderer.bounds.center; hasMarker = true; renderer.gameObject.SetActive(false); }
+
+        var renderers = visual.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) { Destroy(visual); return false; }
+        Bounds bounds = renderers[0].bounds;
+        foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+        if (hasMarker && Vector3.Dot(markerPoint - bounds.center, transform.forward) < 0f)
+            visual.transform.Rotate(0f, 180f, 0f, Space.World);
+
+        visual.transform.localScale *= Random.Range(minHeight, maxHeight) / Mathf.Max(.01f, bounds.size.y);
+        bounds = renderers[0].bounds;
+        foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+        visual.transform.position += home - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+        bubbleHeight = dog ? 1.3f : 1.5f;
+        return true;
     }
     public void ResetForRound()
     {
@@ -89,7 +173,8 @@ public class MarketPedestrian : Interactable
         speechTimer -= Time.deltaTime; speechRemaining -= Time.deltaTime;
         if (speechTimer <= 0f)
         {
-            speech = Calls[line++ % Calls.Length]; speechRemaining = 3.6f;
+            string[] calls = capybara ? CapybaraCalls : dog ? DogCalls : Calls;
+            speech = calls[line++ % calls.Length]; speechRemaining = 3.6f;
             speechTimer = Random.Range(8f, 15f);
         }
         if (Stationary || Agent.pathPending) return;
@@ -111,8 +196,13 @@ public class MarketPedestrian : Interactable
         if (!PlayerController.GameplayActive || player == null || player.IsDetained) return;
         if (Vector3.Distance(transform.position + Vector3.up, player.transform.position) > 3f) return;
         if (Agent != null && Agent.isOnNavMesh) Agent.ResetPath();
-        wait = 7f; speech = "¡Buen día, caserito!"; speechRemaining = 5f;
-        FloatingWindows.ShowInfo(displayName + " · Casero del Lanza", Conversations[personality % Conversations.Length], 8f);
+        wait = 7f; speech = capybara ? "¡Prrr, prrr!" : dog ? "¡Guau, guau!" : "¡Buen día, caserito!"; speechRemaining = 5f;
+        if (capybara)
+            FloatingWindows.ShowInfo(displayName + " · Capibara del Lanza", CapybaraTalks[(personality / 9) % CapybaraTalks.Length], 8f);
+        else if (dog)
+            FloatingWindows.ShowInfo(displayName + " · Perrito del Lanza", DogTalks[(personality / 9) % DogTalks.Length], 8f);
+        else
+            FloatingWindows.ShowInfo(displayName + " · Casero del Lanza", Conversations[personality % Conversations.Length], 8f);
     }
     private void OnGUI()
     {
@@ -121,7 +211,7 @@ public class MarketPedestrian : Interactable
         if (Vector3.Distance(market.Worker.transform.position, transform.position) > 13f) return;
         Camera camera = market.Worker.viewCamera != null ? market.Worker.viewCamera : Camera.main;
         if (camera == null) return;
-        Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * 2.25f);
+        Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * bubbleHeight);
         Rect viewport = camera.pixelRect;
         if (screen.z <= 0 || !viewport.Contains(new Vector2(screen.x, screen.y))) return;
         float scale = Mathf.Clamp(Screen.height / 1080f, .7f, 1.2f);
